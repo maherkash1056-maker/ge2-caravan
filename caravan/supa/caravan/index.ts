@@ -48,6 +48,28 @@ const rnd = (len = 32) => { const a = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrst
 const skillTotals = (rows: any[]) => { const t: Record<string, { r: number; n: number }> = {}; for (const r of rows) for (const part of String(r.skill_codes || "").split(/\s+/)) { const m = part.match(/^([a-z_]+):(\d+)\/(\d+)$/); if (!m) continue; const k = m[1]; t[k] = t[k] || { r: 0, n: 0 }; t[k].r += +m[2]; t[k].n += +m[3]; } return t; };
 const examsToSpec = (e: any) => ({ id: e.id, student_id: e.student_id, name: e.name, title: e.title, questions: e.questions, skills: e.skills, kind: e.kind, ok: e.ok, created_at: e.created_at, exam_json: e.exam_json });
 
+// ---------- RAG: local embeddings (gte-small inside the Edge Function, 384 dims) ----------
+declare const Supabase: any;
+let _ai: any = null;
+async function embed(text: string): Promise<number[] | null> {
+  try { if (!_ai) _ai = new Supabase.ai.Session("gte-small"); const v = await _ai.run(String(text || "").slice(0, 2000), { mean_pool: true, normalize: true }); return Array.from(v as Iterable<number>); } catch (_) { return null; }
+}
+function embedTextOf(kind: string, j: any, title = ""): string {
+  if (!j || typeof j !== "object") return title;
+  if (kind === "writing") { const fixes = (Array.isArray(j.fix) ? j.fix : []).map((f: any) => String(f?.why || "")).filter(Boolean).slice(0, 4).join(" "); return [title || j.title, j.task, String(j.transcript || "").slice(0, 900), fixes].filter(Boolean).join("\n"); }
+  const texts = (Array.isArray(j.texts) ? j.texts : []).map((t: any) => String(t?.body || "")).join("\n").slice(0, 1400);
+  const qs = (Array.isArray(j.questions) ? j.questions : []).map((q: any) => String(q?.q || "")).filter(Boolean).slice(0, 12).join(" ");
+  return [title || j.title, texts, qs].filter(Boolean).join("\n");
+}
+async function embedRow(id: number, kind: string, j: any, title: string) {
+  const et = embedTextOf(kind, j, title); if (!et.trim()) return; const v = await embed(et); if (!v) return;
+  await sb.from("exams").update({ embedding: JSON.stringify(v), embed_text: et.slice(0, 4000) }).eq("id", id);
+}
+function topicOf(prompt: string): string {
+  const m = prompt.match(/topic[^"\n]{0,40}"([^"]{3,160})"/i) || prompt.match(/about\s+"([^"]{3,160})"/i) || prompt.match(/TOPIC:\s*([^\n]{3,160})/i);
+  return m ? m[1].trim() : "";
+}
+
 // ---------- request parsing (same as "Read the request") ----------
 function parse(bodyText: string) {
   let b: any = null; try { b = JSON.parse(bodyText); } catch (_) {}
@@ -137,6 +159,22 @@ async function claude(req: ReturnType<typeof parse>, me: any) {
       if (chosenWords.length) { used.awl = chosenWords; used.unit = ranked.length && ranked[0].s > 0 ? String(ranked[0].r.theme).split("|")[0].trim() : ""; prompt += "\n\nVOCABULARY FROM OUR TEXTBOOK (Pathways 2): use at least " + Math.min(8, chosenWords.length) + " of these words naturally in the text(s), at B1 level, and make at least two questions depend on understanding them: " + chosenWords.join(", ") + ". Add a top-level JSON field \"awl_used\" listing the ones you used."; }
     }
   }
+  if (kind === "exam" && me) {
+    try {
+      const topic = topicOf(prompt); let rows: any[] = [];
+      if (topic) { const qv = await embed(topic); if (qv) { const { data } = await sb.rpc("match_exams", { query_embedding: JSON.stringify(qv), p_group: me.group_id, p_kind: "exam", p_count: 5 }); rows = data || []; } }
+      if (!rows.length) { const { data } = await sb.from("exams").select("id, title, embed_text, created_at").eq("kind", "exam").eq("ok", true).eq("group_id", me.group_id).order("created_at", { ascending: false }).limit(5); rows = (data || []).map((r: any) => ({ ...r, snippet: String(r.embed_text || "").slice(0, 240) })); }
+      rows = rows.filter((r: any) => r.title || r.snippet);
+      if (rows.length) prompt += "\n\nALREADY USED IN THIS CLASS (do NOT reuse these topics, places, facts or question ideas; keep the same difficulty and style):" + rows.map((r: any, i: number) => "\n" + (i + 1) + ". " + String(r.title || "").slice(0, 80) + (r.snippet ? " — " + String(r.snippet).replace(/\s+/g, " ").slice(0, 160) : "")).join("");
+    } catch (_) { /* RAG is best-effort */ }
+  }
+  if (kind === "writing" && me) {
+    try {
+      const { data: prev } = await sb.from("exams").select("title, exam_json, created_at").eq("kind", "writing").eq("ok", true).eq("student_id", me.student_id).order("created_at", { ascending: false }).limit(2);
+      const lines = (prev || []).map((r: any) => { const j = r.exam_json || {}; const fixes = (Array.isArray(j.fix) ? j.fix : []).map((f: any) => String(f?.why || "")).filter(Boolean).slice(0, 3); return "- " + String(r.created_at).slice(0, 10) + " \"" + String(r.title || j.title || "").slice(0, 60) + "\" (score " + (j.score ?? "?") + "): " + (fixes.join(" | ") || "no notes"); });
+      if (lines.length) prompt += "\n\nTHIS STUDENT'S PREVIOUS FEEDBACK (from the last essays they sent):\n" + lines.join("\n") + "\nIn \"good\" say in one sentence which earlier advice they have now followed. In \"fix\" give priority to mistakes that repeat from before, and do not repeat earlier advice word for word.";
+    } catch (_) { /* best-effort */ }
+  }
   const content: any[] = [];
   for (const im of req.images) { const type = String(im?.type || ""), data = String(im?.data || ""); if (/^image\/(jpeg|png|webp|gif)$/.test(type) && data.length < 4000000) content.push({ type: "image", source: { type: "base64", media_type: type, data } }); }
   content.push({ type: "text", text: prompt });
@@ -151,7 +189,8 @@ async function claude(req: ReturnType<typeof parse>, me: any) {
   if (kind === "exam" || kind === "writing") {
     const text = out.ok ? String(out.text || "") : ""; const spec = text ? loose(text) : null; const title = (spec && spec.title) || (text.match(/"title"\s*:\s*"([^"]{1,120})"/) || [])[1] || "";
     const skillsStr = Array.isArray(req.body.skills) ? req.body.skills.map(String).join(" ") : "";
-    await sb.from("exams").insert({ student_id: me.student_id, group_id: me.group_id, kind, title: s(title, 120), skills: skillsStr, questions: n(req.body.len), exam_json: spec || (text ? { raw: text.slice(0, 60000) } : null), ok: out.ok === true, vocab_unit: used.unit || null });
+    const { data: ins } = await sb.from("exams").insert({ student_id: me.student_id, group_id: me.group_id, kind, title: s(title, 120), skills: skillsStr, questions: n(req.body.len), exam_json: spec || (text ? { raw: text.slice(0, 60000) } : null), ok: out.ok === true, vocab_unit: used.unit || null }).select("id").maybeSingle();
+    if (ins && out.ok && spec) { try { await embedRow(ins.id, kind, spec, s(title, 120)); } catch (_) { /* best-effort */ } }
   }
   return reply(out);
 }
@@ -212,7 +251,20 @@ async function profileView(me: any) {
 async function tasks(req: ReturnType<typeof parse>, me: any) {
   if (!me) return fail("login", "Please log in first.");
   if (req.kind === "bank") {
-    const d = req.data; const want: string[] = Array.isArray(d.skills) ? d.skills.map(String) : []; const len = n(d.len); const wantId = s(d.id, 20), wantTitle = s(d.title, 120).toLowerCase(), count = Math.min(5, Math.max(1, n(d.count) || 1));
+    const d = req.data; const want: string[] = Array.isArray(d.skills) ? d.skills.map(String) : []; const len = n(d.len); const wantId = s(d.id, 20), wantTitle = s(d.title, 120).toLowerCase(), count = Math.min(8, Math.max(1, n(d.count) || 1));
+    const q = s(d.q, 300);
+    if (q && !wantId && !wantTitle) {
+      const qv = await embed(q); if (!qv) return fail("busy", "The search is not ready. Try again.");
+      const { data: hits } = await sb.rpc("match_exams", { query_embedding: JSON.stringify(qv), p_group: me.group_id, p_kind: "exam", p_count: 12 });
+      const { data: played } = await sb.from("results").select("exam_id").eq("student_id", me.student_id).like("exam_id", "b%");
+      const done = new Set<string>(((played || []).map((r: any) => String(r.exam_id || "").slice(1))).concat((Array.isArray(d.exclude) ? d.exclude : []).map((x: unknown) => String(x).replace(/^b/, ""))));
+      const ids = (hits || []).filter((h: any) => h.student_id !== me.student_id && !done.has(String(h.id)) && !/^(TEST|49X)/.test(h.student_id)).slice(0, count).map((h: any) => h.id);
+      if (!ids.length) return fail("empty", "Nothing in the bank matches that. Try other words.");
+      const { data: rows } = await sb.from("exams").select("id, title, exam_json, people!inner(name)").in("id", ids);
+      const byId = new Map((rows || []).map((r: any) => [r.id, r])); const sim = new Map<number, number>((hits || []).map((h: any) => [Number(h.id), Number(h.similarity) || 0]));
+      const specs = ids.map((id: number) => byId.get(id)).filter(Boolean).map((e: any) => ({ spec: e.exam_json, title: e.title || e.exam_json?.title || "", by: String(e.people?.name || "").split(/\s+/)[0], id: e.id, similarity: Math.round(100 * (sim.get(Number(e.id)) || 0)) }));
+      return reply({ ok: true, bank: true, specs, pool: (hits || []).length, search: q });
+    }
     if (wantId || wantTitle) { let q = sb.from("exams").select("*, people!inner(name)").eq("kind", "exam").eq("ok", true); q = wantId ? q.eq("id", Number(wantId) || 0) : q.eq("student_id", me.student_id).ilike("title", wantTitle); const { data } = await q.limit(1); const e: any = (data || [])[0]; const sp = e && loose(e.exam_json); if (!sp || !Array.isArray(sp.questions)) return fail("empty", "That exam was not found. Make it again.");
       return reply({ ok: true, bank: true, spec: sp, title: e.title || sp.title || "", by: String(e.people?.name || "").split(/\s+/)[0], questions: n(e.questions), skills: String(e.skills || "").split(/\s+/).filter(Boolean), made: e.created_at, pool: 1, id: e.id }); }
     const [{ data }, { data: played }] = await Promise.all([sb.from("exams").select("id, student_id, title, skills, questions, exam_json, created_at, people!inner(name)").eq("kind", "exam").eq("ok", true).eq("group_id", me.group_id).neq("student_id", me.student_id).order("created_at", { ascending: false }).limit(400), sb.from("results").select("exam_id").eq("student_id", me.student_id).like("exam_id", "b%")]);
@@ -290,6 +342,12 @@ Deno.serve(async (r: Request) => {
     if (k === "result") return await result(req, me);
     if (k === "profile" || k === "board") return await profileView(me);
     if (k === "tasks" || k === "bank") return await tasks(req, me);
+    if (k === "embed_backfill") { if (!me) return fail("login", "Please log in first."); let done = 0, left = 0;
+      const { data: rows } = await sb.from("exams").select("id, kind, title, exam_json").in("kind", ["exam", "writing"]).eq("ok", true).is("embedding", null).not("exam_json", "is", null).order("created_at", { ascending: false }).limit(n(req.body.batch) || 15);
+      for (const r of rows || []) { try { await embedRow(r.id, r.kind, r.exam_json, r.title || ""); done++; } catch (_) { /* skip */ } }
+      const { count } = await sb.from("exams").select("id", { count: "exact", head: true }).in("kind", ["exam", "writing"]).eq("ok", true).is("embedding", null).not("exam_json", "is", null); left = count || 0;
+      return reply({ ok: true, done, left }); }
+    if (k === "teacher_skills") { if (!me || !(me.role === "teacher" || me.role === "admin" || TEACHER_IDS.has(me.student_id))) return fail("login", "Teacher only."); const { data } = await sb.rpc("skill_stats", { p_group: s(req.body.group) || me.group_id, p_days: n(req.body.days) || 30 }); return reply({ ok: true, skills: (data || []).map((r: any) => ({ id: r.skill, name: SK[r.skill] || r.skill, plays: n(r.plays), avg: Number(r.avg_pct) || 0, answered: n(r.weakest_count) })) }); }
     if (k.startsWith("project_")) return await projects(req, me);
     if (k.startsWith("teacher_")) return await teacher(req, me);
     return fail("bad", "Unknown request.");
