@@ -1,0 +1,432 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><title>2 Legends</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one centred game stage; HUD on top, canvas race, modal cards for start / question / read / end. */
+:root{
+  --sky:#5EC4F0; --sky-deep:#1E88C7; --gold:#F5B82E; --gold-soft:#FFE7A3;
+  --sand:#F7D98A; --ink:#10304F; --paper:#FFFBF0; --red:#D8332A; --good:#1E9E5A; --bad:#C9362E;
+  --display:"Baloo 2","Trebuchet MS","Comic Sans MS",system-ui,sans-serif;
+  --body:"Nunito","Trebuchet MS",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--sky);color:var(--ink);font-family:var(--body);font-size:18px;
+  padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));margin:0}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+.hud{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--paper);border:3px solid var(--ink);border-radius:18px;padding:8px 12px;font-weight:800}
+.hud .grp{display:flex;gap:6px;align-items:center;min-width:0}
+.hud .lbl{font-size:14px;text-transform:uppercase;letter-spacing:.06em}
+.stars{font-size:26px;letter-spacing:2px;color:var(--gold);text-shadow:0 0 0 var(--ink),1px 1px 0 var(--ink)}
+.stars .off{color:#d9d2bd;text-shadow:none}
+.hearts{font-size:26px}
+.stage{position:relative;border:4px solid var(--ink);border-radius:22px;overflow:hidden;background:var(--sky);aspect-ratio:900/440}
+canvas{display:block;width:100%;height:100%}
+.bar{height:10px;background:#fff;border:2px solid var(--ink);border-radius:8px;overflow:hidden;flex:1;min-width:80px}
+.bar i{display:block;height:100%;width:0;background:var(--gold)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font-family:var(--display);font-weight:800;font-size:22px;min-height:56px;padding:8px 22px;border-radius:16px;border:3px solid var(--ink);background:var(--gold-soft);color:var(--ink);cursor:pointer;box-shadow:0 5px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.btn:hover{background:#fff1c4}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.btn:focus-visible,input:focus-visible{outline:4px solid var(--sky-deep);outline-offset:3px}
+.btn.big{font-size:30px;padding:10px 38px;background:var(--gold)}
+.btn.small{font-size:18px;min-height:48px}
+.ovl{position:fixed;inset:0;background:rgba(16,48,79,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20;overflow:auto}
+.ovl[hidden]{display:none!important}
+.card{background:var(--paper);border:4px solid var(--ink);border-radius:26px;max-width:640px;width:100%;padding:20px 22px;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 0 var(--ink);max-height:100%;overflow:auto}
+.card h1{font-size:clamp(40px,9vw,64px);line-height:1;color:var(--ink)}
+.card h1 span{color:var(--sky-deep)}
+.card h2{font-size:28px}
+.chip{align-self:flex-start;background:var(--sky);border:3px solid var(--ink);border-radius:999px;padding:2px 14px;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.06em}
+.q{font-size:26px;font-weight:800;line-height:1.3}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;font-family:var(--body);font-weight:800;font-size:22px;min-height:60px;padding:8px 16px;border:3px solid var(--ink);border-radius:16px;background:#fff;color:var(--ink);cursor:pointer;box-shadow:0 4px 0 var(--ink)}
+.opt:hover{background:var(--gold-soft)}
+.opt b{background:var(--sky);border:2px solid var(--ink);border-radius:10px;min-width:38px;height:38px;display:grid;place-items:center;font-family:var(--display)}
+.opt.ok{background:#c8f2d8}.opt.no{background:#ffd2cc}
+.opt:disabled{cursor:default}
+input.fill{font:800 24px var(--body);width:9ch;max-width:100%;padding:6px 10px;border:3px solid var(--ink);border-radius:12px;background:#fff;color:var(--ink);text-align:center}
+.fb{border:3px solid var(--ink);border-radius:16px;padding:12px 14px;font-weight:700}
+.fb.ok{background:#c8f2d8}.fb.no{background:#ffd9d4}
+.fb h3{font-size:26px}
+.read{font-size:20px;line-height:1.55}
+.read p{margin:0 0 .7em}
+.how{margin:0;padding-left:1.2em;font-weight:700;line-height:1.5}
+.who{font-weight:800;font-size:20px}
+.kbd{font-size:15px;font-weight:700;opacity:.85}
+.big-score{font-family:var(--display);font-size:44px;font-weight:800}
+.mobile-pad{display:none}
+@media (max-width:560px){
+  body{font-size:16px}
+  .q{font-size:22px}.opt{font-size:20px}
+  .hud .lbl{display:none}
+}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+
+<div class="wrap">
+  <div class="hud" aria-live="polite">
+    <div class="grp"><span class="lbl">Stars</span><span class="stars" id="stars"></span></div>
+    <div class="grp"><span class="lbl">Chances</span><span class="hearts" id="hearts"></span></div>
+    <div class="grp"><span class="lbl">Score</span><span id="score">0</span></div>
+    <div class="grp"><span class="lbl">Lap</span><span id="lap">1 / 3</span></div>
+  </div>
+  <div class="stage"><canvas id="cv" width="900" height="440" aria-label="Unicorn race on a sand track near Salalah"></canvas></div>
+  <div class="row">
+    <span class="lbl" style="font-weight:800" id="nextlbl">Next question</span>
+    <div class="bar"><i id="nextbar"></i></div>
+    <button class="btn small" id="readBtn">READ</button>
+    <button class="btn small" id="muteBtn" aria-pressed="false">SOUND: ON</button>
+  </div>
+</div>
+
+<div class="ovl" id="ovl"><div class="card" id="card"></div></div>
+
+<script>
+(function(){
+"use strict";
+var TEXT=[
+"In a small factory in Barka, about forty kilometres west of Muscat, Said Al Busaidi has been making halwa for thirty years. Halwa is the sweet, dark jelly that is served with coffee in every Omani home, and Barka is famous for it. Said learned the recipe from his father, and today he makes about three hundred kilograms a day.",
+"The process starts early in the morning. First, sugar is boiled with water in a huge copper pot, which is called a marjal, until it turns into a thick brown syrup. In a second pot, corn starch is mixed with cold water. Starch is a white powder; it is the starch that makes halwa thick.",
+"Next, the starch mixture is added slowly to the hot syrup. This is the hardest part of the job. The mixture must be stirred without stopping with a long wooden paddle, over a wood fire, for about two hours. If the worker stops stirring, even for a minute, the halwa burns and the whole pot is wasted. Two workers take turns, because the paddle is heavy and the fire is hot.",
+"After about an hour, ghee is added, a little at a time. Ghee is butter that has been cooked and cleaned, and it gives halwa its shine. Then the flavours go in: cardamom, saffron and rosewater. Each family has its own mixture, and Said keeps his a secret. Some factories add nuts, almonds or cashews, in the last ten minutes.",
+"When the halwa is ready, it comes away from the sides of the pot. It is poured into bowls and left to cool for four hours. Finally, the bowls are covered and taken to the shop next door. A one-kilogram bowl costs about three rials, and before Eid the shop sells more than two hundred bowls a day.",
+"Said says the secret is patience. \"Machines can stir,\" he says, \"but a machine cannot smell when the halwa is ready.\""];
+
+var QS=[
+{t:"tfng",q:"The two workers share the stirring because the fire needs more wood.",a:1,
+ why:"The text says the workers take turns \"because the paddle is heavy and the fire is hot\"."},
+{t:"tfng",q:"Saffron gives halwa its shine.",a:1,
+ why:"The text says ghee \"gives halwa its shine\". Saffron is one of the flavours."},
+{t:"tfng",q:"Said eats halwa every weekend.",a:2,
+ why:"The text does not say when Said eats halwa. So the answer is Not Given."},
+{t:"abc",q:"How long does it take to stir the halwa?",o:["One hour","Two hours","Four hours"],a:1,
+ why:"The text says the mixture is stirred \"for about two hours\"."},
+{t:"abc",q:"What do workers use to stir the halwa?",o:["A metal spoon","A long wooden paddle","A machine"],a:1,
+ why:"The text says the mixture is stirred \"with a long wooden paddle\"."},
+{t:"abc",q:"How long is the halwa left to cool?",o:["Two hours","Three hours","Four hours"],a:2,
+ why:"The text says the halwa is \"left to cool for four hours\"."},
+{t:"fill",pre:"Each family has its own mixture, and Said keeps his a",post:".",a:"secret",
+ why:"The text says: \"Said keeps his a secret.\""},
+{t:"fill",pre:"Said learned the halwa recipe from his",post:".",a:"father",
+ why:"The text says: \"Said learned the recipe from his father.\""}];
+var PLAYERS=["Wijdan","Khlood"];
+var TFNG=["True","False","Not Given"], LET=["A","B","C"];
+var QTIME=15;
+var TOTAL=QS.length, NEED=6, LAPS=3;
+
+var $=function(id){return document.getElementById(id)};
+var cv=$("cv"),ctx=cv.getContext("2d"),W=900,H=440;
+var card=$("card"),ovl=$("ovl");
+
+/* ---------- sound ---------- */
+var muted=false,ac=null;
+function tone(f,d,type,when,vol){
+  if(muted)return;
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    var o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime+(when||0);
+    o.type=type||"sine";o.frequency.value=f;g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d);}catch(e){}
+}
+var SFX={
+ good:function(){tone(523,.14,"triangle",0);tone(659,.14,"triangle",.12);tone(784,.24,"triangle",.24)},
+ bad:function(){tone(220,.2,"sawtooth",0,.1);tone(165,.32,"sawtooth",.18,.1)},
+ ask:function(){tone(660,.1,"sine",0);tone(880,.16,"sine",.1)},
+ win:function(){[523,659,784,1047,784,1047].forEach(function(f,i){tone(f,.2,"triangle",i*.14)})},
+ lose:function(){[330,262,196].forEach(function(f,i){tone(f,.3,"sawtooth",i*.22,.1)})},
+ click:function(){tone(500,.06,"square",0,.06)}
+};
+
+/* ---------- state ---------- */
+var G;
+function reset(){
+  G={state:"start",qi:0,correct:0,hearts:3,score:0,answered:0,pc:[0,0],
+     pT:0,p:0,rT:0,r:0,timer:3,timerMax:3,paused:false,fin:0,finType:"",parts:[],t:0,sel:null,done:false};
+  hud();
+}
+function hud(){
+  var s="";for(var i=0;i<NEED;i++)s+='<span class="'+(i<G.correct?"":"off")+'">★</span>';
+  $("stars").innerHTML=s;
+  var h="";for(var j=0;j<3;j++)h+=j<G.hearts?"❤️":"🖤";
+  $("hearts").textContent=h;
+  $("score").textContent=G.score;
+  $("lap").textContent=(G.p>=LAPS-0.01?"Finish!":(Math.min(LAPS,Math.floor(G.p)+1)+" / "+LAPS));
+}
+
+/* ---------- overlays ---------- */
+function show(html){card.innerHTML=html;ovl.hidden=false;var f=card.querySelector("[data-f]");if(f)setTimeout(function(){f.focus()},30)}
+function hide(){ovl.hidden=true}
+
+function startScreen(){
+  G.state="start";
+  show('<h1>2 <span>Legends</span></h1>'+
+  '<div class="who">By Wijdan &amp; Khlood</div>'+
+  '<div>Wijdan and Khlood are looking for the pearl. Race the red robot on the sand track near Salalah!</div>'+
+  '<h2>How to play</h2><ol class="how">'+
+  '<li>Answer each question. A right answer makes the unicorn run.</li>'+
+  '<li>A wrong answer takes one chance (you have 3). The robot runs.</li>'+
+  '<li>Get 6 answers right to finish 3 laps and win!</li></ol>'+
+  '<div class="kbd">Mouse, keyboard (A B C, T F N, Enter) or tap the big buttons.</div>'+
+  '<div class="row"><button class="btn big" data-f id="playBtn">PLAY</button><button class="btn" id="readBtn2">READ</button></div>');
+  $("playBtn").onclick=function(){SFX.click();startGame()};
+  $("readBtn2").onclick=openRead;
+}
+function startGame(){reset();hide();G.state="race";G.timer=G.timerMax=3;SFX.click()}
+
+var readOpen=false,readPrev=null;
+function openRead(){
+  if(readOpen)return;readOpen=true;readPrev=card.innerHTML;SFX.click();
+  var bk=card;
+  var d=document.createElement("div");d.className="ovl";d.style.zIndex=30;d.id="readOvl";
+  d.innerHTML='<div class="card"><h2>Read the text</h2><div class="read">'+TEXT.map(function(p){return"<p>"+p+"</p>"}).join("")+'</div><button class="btn" data-f id="closeRead">CLOSE</button></div>';
+  document.body.appendChild(d);
+  d.querySelector("#closeRead").focus();
+  function close(){readOpen=false;d.remove();SFX.click();if(!ovl.hidden){var f=card.querySelector("input.fill")||card.querySelector("[data-f]");if(f)f.focus()}}
+  d.querySelector("#closeRead").onclick=close;
+  d.addEventListener("click",function(e){if(e.target===d)close()});
+  d._close=close;
+}
+function closeRead(){var d=$("readOvl");if(d&&d._close)d._close()}
+$("readBtn").onclick=openRead;
+$("muteBtn").onclick=function(){muted=!muted;this.textContent="SOUND: "+(muted?"OFF":"ON");this.setAttribute("aria-pressed",muted)};
+
+/* ---------- questions ---------- */
+function askQuestion(){
+  G.state="question";G.done=false;G.qt=QTIME;G.timeout=false;SFX.ask();
+  var q=QS[G.qi],n=G.qi+1,body="";
+  var lab={abc:"Choose A, B or C",tfng:"True / False / Not Given",fill:"Write the missing word"}[q.t];
+  var head='<div class="who">'+PLAYERS[G.qi%2]+'\'s turn! 🦄</div><span class="chip">Question '+n+' of '+TOTAL+' · '+lab+'</span>';
+  if(q.t==="abc"){
+    body='<div class="q">'+q.q+'</div><div class="opts">'+q.o.map(function(o,i){return'<button class="opt" data-i="'+i+'"'+(i===0?" data-f":"")+'><b>'+LET[i]+'</b>'+o+'</button>'}).join("")+'</div>';
+  }else if(q.t==="tfng"){
+    body='<div class="q">'+q.q+'</div><div class="opts">'+TFNG.map(function(o,i){return'<button class="opt" data-i="'+i+'"'+(i===0?" data-f":"")+'><b>'+"TFN"[i]+'</b>'+o+'</button>'}).join("")+'</div>';
+  }else{
+    body='<div class="q">'+q.pre+' <input class="fill" id="fillIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Missing word"> '+q.post+'</div><div class="row"><button class="btn" id="fillGo">CHECK</button></div>';
+  }
+  show(head+'<div class="row" id="qtRow"><span class="lbl" style="font-weight:800">Time</span><div class="bar"><i id="qbar" style="width:100%"></i></div><b id="qsec" style="font-size:24px;min-width:2ch">'+QTIME+'</b></div>'+body+'<div class="row"><button class="btn small" id="readQ">READ</button></div><div id="fbBox"></div>');
+  $("readQ").onclick=openRead;
+  card.querySelectorAll(".opt").forEach(function(b){b.onclick=function(){answer(+b.dataset.i)}});
+  if(q.t==="fill"){
+    var inp=$("fillIn");setTimeout(function(){inp.focus()},40);
+    $("fillGo").onclick=function(){answer(inp.value)};
+    inp.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();answer(inp.value)}};
+  }
+}
+function answer(v){
+  if(G.done)return;var q=QS[G.qi],ok;
+  if(q.t==="fill"){v=String(v).trim().toLowerCase();if(!v)return;ok=(v===q.a)}else ok=(v===q.a);
+  G.done=true;G.answered++;var qr=$("qtRow");if(qr)qr.style.opacity=.4;
+  if(q.t==="fill"){$("fillIn").disabled=true;$("fillGo").disabled=true}
+  else card.querySelectorAll(".opt").forEach(function(b,i){b.disabled=true;if(i===q.a)b.classList.add("ok");else if(i===v)b.classList.add("no")});
+  var ans=q.t==="abc"?(LET[q.a]+". "+q.o[q.a]):q.t==="tfng"?TFNG[q.a]:q.a;
+  if(ok){
+    G.correct++;G.pc[G.qi%2]++;G.score+=100;G.pT=Math.min(LAPS,G.correct*(LAPS/NEED));SFX.good();burst(W*.5,180,"#F5B82E");
+  }else{
+    G.hearts--;G.score=Math.max(0,G.score-20);G.rT=Math.min(LAPS,G.rT+0.3);SFX.bad();
+  }
+  hud();
+  var last=(G.hearts<=0)||(G.qi>=TOTAL-1);
+  var msgOk=["Great job!","Excellent!","Super!","You are a legend!"][G.qi%4];
+  var extra=ok&&G.correct===NEED?" You have 6 stars. You can win!":"";
+  var fb='<div class="fb '+(ok?"ok":"no")+'"><h3>'+(ok?msgOk:(G.timeout?"Time is up!":"Oops! Not this time."))+(ok?" ⭐":" 🤖")+'</h3>'+
+   '<div><b>Correct answer: '+ans+'</b></div><div>'+q.why+extra+'</div>'+
+   '<div style="margin-top:6px">'+(ok?"The unicorn runs forward!":"You lose a chance. The robot runs forward!")+'</div></div>'+
+   '<div class="row"><button class="btn big" data-f id="nextBtn">'+(last?"FINISH":"KEEP RACING")+'</button></div>';
+  $("fbBox").innerHTML=fb;
+  var nb=$("nextBtn");nb.focus();nb.onclick=function(){afterAnswer()};
+  nb.scrollIntoView({block:"nearest"});
+}
+function afterAnswer(){
+  SFX.click();
+  if(G.hearts<=0){startFinale("lose");return}
+  G.qi++;
+  if(G.qi>=TOTAL){ if(G.correct>=NEED)startFinale("win");else startFinale("lose");return}
+  hide();G.state="race";G.timer=G.timerMax=6;
+}
+function startFinale(type){
+  hide();G.state="finale";G.finType=type;G.fin=0;
+  if(type==="win"){G.pT=LAPS;SFX.win();for(var i=0;i<5;i++)setTimeout(function(){burst(150+Math.random()*600,120+Math.random()*120,["#F5B82E","#5EC4F0","#fff"][Math.random()*3|0])},i*250)}
+  else{G.rT=LAPS;SFX.lose()}
+}
+function endScreen(){
+  G.state="end";var win=G.finType==="win";
+  show('<h1 style="font-size:clamp(34px,8vw,52px)">'+(win?"You win! 🏆":"The robot wins!")+'</h1>'+
+   '<div>'+(win?"Wijdan and Khlood finished 3 laps and found the pearl! 🦪":"Do not worry. Read the text again and try again!")+'</div>'+
+   '<div class="big-score">Score: '+G.score+'</div>'+
+   '<div class="who">Team correct answers: '+G.correct+' out of '+TOTAL+'</div>'+'<div>Wijdan: '+G.pc[0]+' correct · Khlood: '+G.pc[1]+' correct</div>'+
+   '<div class="stars">'+Array.from({length:NEED}).map(function(_,i){return'<span class="'+(i<G.correct?"":"off")+'">★</span>'}).join("")+'</div>'+
+   '<div class="row"><button class="btn big" data-f id="againBtn">PLAY AGAIN</button><button class="btn" id="readBtn3">READ</button></div>');
+  $("againBtn").onclick=function(){startGame()};
+  $("readBtn3").onclick=openRead;
+}
+
+/* ---------- keyboard ---------- */
+document.addEventListener("keydown",function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(readOpen){if(k==="Escape")closeRead();return}
+  if(G.state==="question"&&!G.done){
+    var q=QS[G.qi],t=e.target&&e.target.tagName==="INPUT";
+    if(q.t==="abc"){var i={a:0,b:1,c:2,"1":0,"2":1,"3":2}[k.toLowerCase()];if(i!==undefined)answer(i)}
+    else if(q.t==="tfng"){var j={t:0,f:1,n:2,"1":0,"2":1,"3":2}[k.toLowerCase()];if(j!==undefined)answer(j)}
+    return;
+  }
+  if(k.toLowerCase()==="r"&&(G.state==="race"||G.state==="start"||G.state==="end"||(G.state==="question"&&G.done))&&!(e.target&&e.target.tagName==="INPUT"))openRead();
+});
+
+/* ---------- drawing ---------- */
+var CX=450,CY=292,TRK=[{a:408,b:136},{a:262,b:62}];
+function lanePos(t,lane){
+  var a=lane===0?318:372,b=lane===0?88:112;
+  var th=Math.PI/2-2*Math.PI*t;
+  return{x:CX+a*Math.cos(th),y:CY+b*Math.sin(th),dx:-Math.sin(th)*(-1),th:th};
+}
+function facing(t,lane){var th=Math.PI/2-2*Math.PI*t;return -Math.sin(th)>=0?1:-1}
+function ell(cx,cy,a,b,fill,stroke,lw){ctx.beginPath();ctx.ellipse(cx,cy,a,b,0,0,7);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.lineWidth=lw||3;ctx.strokeStyle=stroke;ctx.stroke()}}
+function palm(x,y,s){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ctx.strokeStyle="#7a4b1c";ctx.lineWidth=7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(6,-30,0,-60);ctx.stroke();
+  ctx.fillStyle="#2f9e57";ctx.strokeStyle="#10304F";ctx.lineWidth=2;
+  for(var i=0;i<6;i++){var an=-Math.PI/2+(i-2.5)*0.55;ctx.save();ctx.translate(0,-60);ctx.rotate(an+Math.PI/2);ctx.beginPath();ctx.ellipse(0,-20,7,24,0,0,7);ctx.fill();ctx.stroke();ctx.restore()}
+  ctx.fillStyle="#a8651e";ell(-4,-58,4,4,"#a8651e");ell(5,-56,4,4,"#a8651e");
+  ctx.restore();
+}
+function cloud(x,y,s){ctx.fillStyle="#fff";ctx.strokeStyle="#10304F";ctx.lineWidth=2.5;ctx.beginPath();
+  [[0,0,22],[24,-8,26],[52,0,22],[26,8,24]].forEach(function(c){ctx.moveTo(x+c[0]*s+c[2]*s,y+c[1]*s);ctx.arc(x+c[0]*s,y+c[1]*s,c[2]*s,0,7)});ctx.fill();ctx.stroke()}
+function scene(t){
+  var g=ctx.createLinearGradient(0,0,0,170);g.addColorStop(0,"#5EC4F0");g.addColorStop(1,"#BDE8FA");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // sun
+  ctx.save();ctx.translate(760,62);ctx.rotate(t*0.2);ctx.strokeStyle="#F5B82E";ctx.lineWidth=5;ctx.lineCap="round";
+  for(var i=0;i<12;i++){ctx.rotate(Math.PI/6);ctx.beginPath();ctx.moveTo(40,0);ctx.lineTo(54,0);ctx.stroke()}ctx.restore();
+  ell(760,62,32,32,"#F5B82E","#10304F",3);
+  var cx=((t*8)%1100)-100;cloud(cx,60,1);cloud(((cx+520)%1100)-100,38,.8);
+  // green Khareef hills
+  ctx.fillStyle="#6CC785";ctx.strokeStyle="#10304F";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(0,190);ctx.quadraticCurveTo(120,100,270,160);ctx.quadraticCurveTo(380,110,520,170);ctx.quadraticCurveTo(680,100,820,160);ctx.quadraticCurveTo(880,140,900,170);ctx.lineTo(900,200);ctx.lineTo(0,200);ctx.closePath();ctx.fill();ctx.stroke();
+  // sand ground
+  ctx.fillStyle="#F9E2A0";ctx.fillRect(0,180,W,H-180);ctx.beginPath();ctx.moveTo(0,180);ctx.lineTo(W,180);ctx.lineWidth=3;ctx.stroke();
+  palm(70,214,1.05);palm(120,206,.8);palm(840,214,1.05);palm(792,206,.8);
+  // track
+  ell(CX,CY+6,TRK[0].a+6,TRK[0].b+6,"#10304F");
+  ell(CX,CY,TRK[0].a,TRK[0].b,"#F5C95B");
+  ell(CX,CY,TRK[1].a+8,TRK[1].b+8,"#10304F");
+  ell(CX,CY,TRK[1].a,TRK[1].b,"#F9E2A0");
+  // lane dashes
+  ctx.setLineDash([14,14]);ctx.lineDashOffset=-t*20;ell(CX,CY,345,100,null,"rgba(255,255,255,.8)",3);ctx.setLineDash([]);
+  // infield pearl + label
+  ell(CX,CY+4,30,10,"rgba(16,48,79,.18)");
+  ctx.fillStyle="#fff";ctx.strokeStyle="#10304F";ctx.lineWidth=3;ctx.beginPath();ctx.arc(CX,CY-10+Math.sin(t*2)*3,17,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle="rgba(94,196,240,.6)";ctx.beginPath();ctx.arc(CX-5,CY-15+Math.sin(t*2)*3,6,0,7);ctx.fill();
+  ctx.fillStyle="#10304F";ctx.font="800 15px 'Trebuchet MS',sans-serif";ctx.textAlign="center";ctx.fillText("PEARL",CX,CY+34);
+  // finish line (bottom centre)
+  var y0=CY+62,y1=CY+TRK[0].b+2;
+  for(var k=0;k<6;k++)for(var m=0;m<2;m++){ctx.fillStyle=(k+m)%2?"#10304F":"#fff";ctx.fillRect(CX-12+m*12,y0+k*((y1-y0)/6),12,(y1-y0)/6)}
+  ctx.strokeStyle="#10304F";ctx.lineWidth=2;ctx.strokeRect(CX-12,y0,24,y1-y0);
+  ctx.fillStyle="#10304F";ctx.font="800 13px 'Trebuchet MS',sans-serif";ctx.fillText("FINISH",CX,y1+16);
+  ctx.font="800 14px 'Trebuchet MS',sans-serif";ctx.fillText("SALALAH SAND TRACK",CX,CY-48);
+}
+function shadow(x,y,w){ctx.fillStyle="rgba(16,48,79,.22)";ctx.beginPath();ctx.ellipse(x,y,w,w*.28,0,0,7);ctx.fill()}
+function rider(x,y,robe,trim,sk){
+  ctx.fillStyle=robe;ctx.strokeStyle="#10304F";ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.roundRect(x-9,y-8,18,26,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle=trim;ctx.fillRect(x-9,y+8,18,4);
+  ctx.fillStyle=trim;ctx.beginPath();ctx.arc(x,y-14,11,0,7);ctx.fill();ctx.stroke(); // hijab
+  ctx.fillStyle=sk;ctx.beginPath();ctx.ellipse(x+2,y-13,6,7,0,0,7);ctx.fill();
+  ctx.fillStyle="#10304F";ctx.beginPath();ctx.arc(x+4,y-14,1.3,0,7);ctx.fill();
+  ctx.strokeStyle="#c43";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x+4,y-11,2.5,0.2,2.6);ctx.stroke();
+}
+function unicorn(x,y,s,f,ph,run){
+  ctx.save();ctx.translate(x,y);ctx.scale(s*f,s);
+  shadow(0,2,44);
+  var sw=Math.sin(ph)*(run?14:5);
+  ctx.lineCap="round";ctx.strokeStyle="#10304F";
+  [[-24,1],[-14,-1],[18,-1],[28,1]].forEach(function(l,i){var o=(i%2?-1:1)*sw;ctx.lineWidth=9;ctx.strokeStyle="#10304F";ctx.beginPath();ctx.moveTo(l[0],-26);ctx.lineTo(l[0]+o,-3);ctx.stroke();ctx.lineWidth=5;ctx.strokeStyle="#fff";ctx.beginPath();ctx.moveTo(l[0],-26);ctx.lineTo(l[0]+o,-3);ctx.stroke();ctx.fillStyle="#F5B82E";ctx.beginPath();ctx.arc(l[0]+o,-3,4,0,7);ctx.fill()});
+  // tail
+  ctx.fillStyle="#5EC4F0";ctx.strokeStyle="#10304F";ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-36,-42);ctx.quadraticCurveTo(-64,-40+Math.sin(ph*1.3)*8,-56,-12);ctx.quadraticCurveTo(-46,-26,-34,-28);ctx.fill();ctx.stroke();
+  // body
+  ell(0,-36,40,21,"#fff","#10304F",3);
+  // neck + head
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(24,-44);ctx.lineTo(44,-76);ctx.lineTo(58,-68);ctx.lineTo(40,-34);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.ellipse(56,-76,17,12,-.3,0,7);ctx.fill();ctx.stroke();
+  // mane
+  ctx.fillStyle="#5EC4F0";ctx.beginPath();ctx.moveTo(30,-74);ctx.quadraticCurveTo(18,-66,22,-48);ctx.quadraticCurveTo(30,-56,38,-60);ctx.fill();ctx.stroke();
+  // horn
+  ctx.fillStyle="#F5B82E";ctx.beginPath();ctx.moveTo(54,-86);ctx.lineTo(66,-110);ctx.lineTo(62,-84);ctx.closePath();ctx.fill();ctx.stroke();
+  // ear + eye + nostril
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(46,-86);ctx.lineTo(44,-98);ctx.lineTo(54,-88);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#10304F";ctx.beginPath();ctx.arc(58,-79,2.8,0,7);ctx.fill();ctx.beginPath();ctx.arc(70,-73,1.5,0,7);ctx.fill();
+  ctx.fillStyle="#F59ab0";ctx.beginPath();ctx.ellipse(52,-72,4,2.5,0,0,7);ctx.fill();
+  // saddle
+  ctx.fillStyle="#F5B82E";ctx.beginPath();ctx.roundRect(-18,-60,38,10,5);ctx.fill();ctx.stroke();
+  // riders (Khlood back, Wijdan front)
+  rider(-8,-66+Math.sin(ph*2)*1.5,"#1E88C7","#F5B82E","#E8B48A");
+  rider(12,-66+Math.sin(ph*2+1)*1.5,"#F5B82E","#5EC4F0","#D9A07A");
+  ctx.restore();
+}
+function robot(x,y,s,f,ph,run){
+  ctx.save();ctx.translate(x,y);ctx.scale(s*f,s);
+  shadow(0,2,40);
+  if(run){ctx.fillStyle="#F5B82E";ctx.strokeStyle="#10304F";ctx.lineWidth=2;var fl=14+Math.random()*10;ctx.beginPath();ctx.moveTo(-26,-30);ctx.lineTo(-26-fl,-24);ctx.lineTo(-26,-18);ctx.fill();ctx.stroke()}
+  // wheels
+  [-18,18].forEach(function(wx){ctx.fillStyle="#10304F";ctx.beginPath();ctx.arc(wx,-10,12,0,7);ctx.fill();ctx.strokeStyle="#ccc";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(wx,-10);ctx.lineTo(wx+Math.cos(ph*3)*9,-10+Math.sin(ph*3)*9);ctx.stroke()});
+  // body
+  ctx.fillStyle="#D8332A";ctx.strokeStyle="#10304F";ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(-28,-62,56,44,10);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#F5B82E";ctx.beginPath();ctx.arc(0,-40,8,0,7);ctx.fill();ctx.stroke();
+  // arms
+  ctx.strokeStyle="#10304F";ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(28,-48);ctx.lineTo(42,-38+Math.sin(ph*2)*6);ctx.stroke();
+  // head
+  ctx.fillStyle="#E8574D";ctx.strokeStyle="#10304F";ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(-20,-92,40,28,8);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#FFE7A3";ctx.beginPath();ctx.arc(-7,-78,6,0,7);ctx.arc(9,-78,6,0,7);ctx.fill();
+  ctx.fillStyle="#10304F";ctx.beginPath();ctx.arc(-5,-78,2.5,0,7);ctx.arc(11,-78,2.5,0,7);ctx.fill();
+  ctx.strokeStyle="#10304F";ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-8,-98+0);ctx.moveTo(0,-92);ctx.lineTo(0,-104);ctx.stroke();
+  ctx.fillStyle="#F5B82E";ctx.beginPath();ctx.arc(0,-106,4+Math.sin(ph*4),0,7);ctx.fill();ctx.stroke();
+  ctx.restore();
+}
+function dust(x,y,list,f){if(Math.random()<.5)list.push({x:x-f*30,y:y-4,vx:-f*20-Math.random()*20,vy:-10-Math.random()*20,l:.6,c:"rgba(230,190,100,"})}
+function burst(x,y,c){for(var i=0;i<26;i++){var a=Math.random()*6.28,s=60+Math.random()*180;G.parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40,l:1,c:c,star:true})}}
+
+/* ---------- loop ---------- */
+var last=0,dustL=[];
+function frame(ts){
+  var dt=Math.min(.05,(ts-last)/1000||0);last=ts;G.t+=dt;
+  var running=!readOpen;
+  if(running){
+    if(G.state==="race"){
+      G.timer-=dt;G.rT=Math.min(LAPS-0.05,G.rT+dt*0.045);
+      if(G.timer<=0)askQuestion();
+    }
+    if(G.state==="question"&&!G.done){
+      G.qt-=dt;
+      var qb=$("qbar"),qs=$("qsec");if(qb){qb.style.width=Math.max(0,100*G.qt/QTIME)+"%";qb.style.background=G.qt<=5?"#D8332A":"#F5B82E"}
+      if(qs)qs.textContent=Math.max(0,Math.ceil(G.qt));
+      if(G.qt<=0){G.timeout=true;answer(QS[G.qi].t==="fill"?"(no answer)":-1)}
+    }
+    if(G.state==="finale"){G.fin+=dt;if(G.fin>2.4)endScreen()}
+    G.p+=(G.pT-G.p)*Math.min(1,dt*2.2);
+    G.r+=(G.rT-G.r)*Math.min(1,dt*(G.state==="finale"?2.5:3));
+    if(Math.abs(G.pT-G.p)<.002)G.p=G.pT;
+  }
+  $("nextbar").style.width=(G.state==="race"?(100*(1-G.timer/G.timerMax)):0)+"%";
+  $("nextlbl").textContent=G.state==="race"?"Next question in "+Math.ceil(Math.max(0,G.timer))+"…":(G.state==="question"?"Question time!":"Next question");
+  hud();
+  scene(G.t);
+  var runP=Math.abs(G.pT-G.p)>.01||G.state==="race",runR=G.state!=="question"&&G.state!=="start"&&G.state!=="end"||Math.abs(G.rT-G.r)>.01;
+  var pp=lanePos(G.p,0),rp=lanePos(G.r,1),fp=facing(G.p,0),fr=facing(G.r,1);
+  var sp=function(p){return .75+.4*((p.y-(CY-112))/224)};
+  var items=[{y:pp.y,f:function(){unicorn(pp.x,pp.y,sp(pp)*.78,fp,G.t*(Math.abs(G.pT-G.p)>.01?14:5),Math.abs(G.pT-G.p)>.01)}},
+             {y:rp.y,f:function(){robot(rp.x,rp.y,sp(rp)*.8,fr,G.t*10,runR)}}].sort(function(a,b){return a.y-b.y});
+  items.forEach(function(i){i.f()});
+  if(running){if(Math.abs(G.pT-G.p)>.01)dust(pp.x,pp.y,dustL,fp);if(runR&&Math.random()<.4)dust(rp.x,rp.y,dustL,fr)}
+  // dust
+  dustL=dustL.filter(function(d){d.l-=dt;d.x+=d.vx*dt;d.y+=d.vy*dt;if(d.l>0){ctx.fillStyle=d.c+(d.l*.8)+")";ctx.beginPath();ctx.arc(d.x,d.y,6*(1.2-d.l),0,7);ctx.fill()}return d.l>0});
+  // sparkles
+  G.parts=G.parts.filter(function(p){p.l-=dt*.9;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;if(p.l>0){ctx.globalAlpha=Math.max(0,p.l);ctx.fillStyle=p.c;ctx.strokeStyle="#10304F";ctx.lineWidth=1.5;ctx.font="22px sans-serif";ctx.textAlign="center";ctx.fillText("★",p.x,p.y);ctx.globalAlpha=1}return p.l>0});
+  // finale banner
+  if(G.state==="finale"){ctx.fillStyle="rgba(255,251,240,.95)";ctx.strokeStyle="#10304F";ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(W/2-190,18,380,60,18);ctx.fill();ctx.stroke();ctx.fillStyle="#10304F";ctx.font="800 32px 'Trebuchet MS',sans-serif";ctx.textAlign="center";ctx.fillText(G.finType==="win"?"FINISH LINE! 🏁":"The robot is fast! 🤖",W/2,60)}
+  requestAnimationFrame(frame);
+}
+
+reset();startScreen();requestAnimationFrame(frame);
+})();
+</script>
+</body></html>

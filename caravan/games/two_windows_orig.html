@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ajnan Game - Two Windows</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Baloo 2","Comic Sans MS","Trebuchet MS",sans-serif;background:#0d1b3e;color:#fff;min-height:100vh}
+button{font:inherit;border:0;border-radius:16px;padding:10px 18px;background:linear-gradient(#ffe08a,#ffb347);color:#4a2400;cursor:pointer;font-weight:bold;box-shadow:0 4px 0 #b86a10}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 #b86a10}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+#intro{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:16px;background:linear-gradient(100deg,#ff9a5a 0%,#e8734a 25%,#7a5aa6 50%,#243a7a 75%,#0d1b3e 100%);position:relative;overflow:hidden}
+#intro h1{margin:0;font-size:clamp(30px,7vw,60px);text-shadow:0 4px 0 #0005,0 0 24px #fff8}
+#intro h2{margin:0 0 6px;font-size:clamp(18px,4vw,28px);color:#fff3c4;text-shadow:0 2px 0 #0005}
+.pair{display:flex;align-items:flex-end;gap:min(8vw,70px);margin:10px 0}
+.pair svg{width:min(34vw,170px);filter:drop-shadow(0 8px 10px #0006)}
+.pair .mid{font-size:44px;animation:pulse 1.6s infinite alternate}
+@keyframes pulse{to{transform:scale(1.25)}}
+#intro p{max-width:520px;margin:4px 0 14px;font-size:16px;text-shadow:0 1px 3px #000a}
+#intro .go{font-size:22px;padding:12px 26px;margin:4px}
+.spark{position:absolute;font-size:22px;animation:tw 2.4s infinite alternate;opacity:.8}
+@keyframes tw{from{opacity:.2;transform:scale(.7)}to{opacity:1;transform:scale(1.2)}}
+#game{display:none;flex-direction:column;align-items:center;padding-bottom:20px}
+#game h1{margin:10px 0 2px;font-size:26px;text-shadow:0 2px 0 #0005}
+.sub{margin:0 0 8px;font-size:14px;opacity:.9;text-align:center;padding:0 12px}
+#scene{position:relative;width:min(96vw,860px);aspect-ratio:860/380;border-radius:20px;overflow:hidden;border:4px solid #fff5;box-shadow:0 10px 30px #0008}
+#bg{position:absolute;inset:0;width:100%;height:100%}
+.tw{animation:tw 2s infinite alternate}
+.tw:nth-child(odd){animation-duration:3s}
+.who{position:absolute;bottom:5%;width:12%;transform:translateX(-50%);text-align:center;font-size:12px;transition:left .14s;z-index:3}
+.who svg{width:100%;display:block}
+.who b{display:inline-block;margin-top:-4px;padding:0 9px;border-radius:12px;background:#0007}
+.who.on b{background:#fff;color:#16295e}
+.who.on svg{animation:hop .6s infinite alternate}
+@keyframes hop{to{transform:translateY(-6px)}}
+.star{position:absolute;bottom:36%;transform:translateX(-50%);font-size:clamp(20px,4.2vw,34px);filter:drop-shadow(0 0 8px gold);animation:hop 1s infinite alternate;z-index:2}
+.star.got{opacity:.25;filter:none;animation:none}
+.book{position:absolute;bottom:34%;left:50%;transform:translateX(-50%);font-size:clamp(22px,5vw,38px);text-align:center;line-height:1;z-index:2;filter:drop-shadow(0 0 8px #fff)}
+.book small{display:block;font-size:11px;background:#0007;border-radius:8px;padding:0 6px}
+#cloud{position:absolute;top:6%;left:38%;width:17%;transform:translateX(-50%);transition:left 2s ease-in-out,top .5s,opacity 1s;z-index:2}
+#cloud.atk{top:36%;transition:left .45s ease-in,top .45s;filter:hue-rotate(320deg) saturate(3) drop-shadow(0 0 14px red);animation:shk .12s infinite alternate}
+@keyframes shk{to{margin-left:7px}}
+@keyframes drift{from{transform:translateX(-60px)}to{transform:translateX(60px)}}
+#say{position:absolute;top:30%;left:50%;transform:translateX(-50%);background:#3b2f5acc;padding:6px 14px;border-radius:14px;font-size:14px;opacity:0;transition:opacity .3s;white-space:nowrap;z-index:4}
+#hud{display:flex;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap;justify-content:center}
+#count{font-size:20px;min-width:120px;text-align:center}
+.help{max-width:640px;padding:0 14px;text-align:center;font-size:14px;opacity:.85;margin:0}
+#modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;padding:14px;z-index:10}
+#modal.show{display:flex}
+.card{background:#fff5e8;color:#1d1630;border-radius:22px;padding:20px;max-width:440px;width:100%;border:4px solid #ffb347;box-shadow:0 0 30px #ffb34788}
+.card h2{margin:0 0 10px;font-size:21px}
+.card p{margin:8px 0}
+.card>button{display:block;width:100%;margin-top:10px}
+.story{max-height:58vh;overflow:auto}
+.story p{line-height:1.45;font-size:15px}
+.story svg{width:100%;border-radius:14px;display:block;border:2px solid #ffb34766}
+.hint{font-size:13px;opacity:.75;margin:0 0 8px}
+.catch{position:relative;height:170px;overflow:hidden;background:linear-gradient(#16295e22,#ff9a5a22);border-radius:14px}
+.card .catch button.bubble{position:absolute;left:0;width:150px;margin:0;padding:10px 8px;font-size:14px;border-radius:26px;animation:bob var(--d) ease-in-out infinite alternate}
+.card .catch button.bubble.bad{background:#bbb;box-shadow:none;opacity:.5;animation-play-state:paused}
+@keyframes bob{from{left:0}to{left:calc(100% - 150px)}}
+.who.stun svg{filter:grayscale(1) brightness(.7);animation:none}
+.who.stun:after{content:"⚡💫";position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:20px}
+.hide{display:none!important}
+.timer{height:10px;background:#0002;border-radius:6px;overflow:hidden;margin:8px 0}
+.timer i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff7e5f,#ffd36b);transition:width 12s linear}
+.card .catch button.bubble.good{background:#7ddc8a;animation-play-state:paused}
+#c1,#c2{display:flex;gap:6px;align-items:center;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<section id="intro">
+  <span class="spark" style="left:8%;top:12%">✨</span><span class="spark" style="left:88%;top:16%">⭐</span>
+  <span class="spark" style="left:20%;top:78%">💫</span><span class="spark" style="left:80%;top:72%">✨</span>
+  <h2>Ajnan Game</h2>
+  <h1>Two Windows</h1>
+  <div class="pair"><span id="pL"></span><span class="mid">💕</span><span id="pM"></span></div>
+  <p>Layla lives by the sea in Salalah. Mariam studies near the mountains in Muscat. They miss each other and their family. Help them beat the Lonely Cloud!</p>
+  <div><button class="go" data-m="1">👧 1 Player + AI Mariam 🤖</button><button class="go" data-m="2">👧👩 2 Players</button></div>
+  <p style="margin-top:12px;font-size:14px">1 Player: you are Layla (← / → or A / D), Mariam is the AI · 2 Players: Player 1 = A / D (Layla), Player 2 = ← / → (Mariam) · 12 seconds for each answer!</p>
+</section>
+
+<main id="game">
+  <h1>Ajnan Game - Two Windows</h1>
+  <p class="sub" id="sub"></p>
+  <div id="scene">
+    <svg id="bg" viewBox="0 0 860 380" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="sky" x1="0" x2="1"><stop offset="0" stop-color="#ffb55a"/><stop offset=".25" stop-color="#ff7e5f"/><stop offset=".5" stop-color="#7a5aa6"/><stop offset=".75" stop-color="#243a7a"/><stop offset="1" stop-color="#0d1b3e"/></linearGradient>
+        <linearGradient id="haze" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb26b"/><stop offset=".4" stop-color="#2aa6c9"/><stop offset="1" stop-color="#14688f"/></linearGradient>
+        <linearGradient id="path" x1="0" x2="1"><stop offset="0" stop-color="#d9a066"/><stop offset=".5" stop-color="#8a6a80"/><stop offset="1" stop-color="#2a3566"/></linearGradient>
+        <radialGradient id="sunG"><stop offset="0" stop-color="#fff6c0"/><stop offset=".4" stop-color="#ffd36b"/><stop offset="1" stop-color="#ffd36b" stop-opacity="0"/></radialGradient>
+        <radialGradient id="lamp"><stop offset="0" stop-color="#ffe9a0"/><stop offset="1" stop-color="#ffe9a0" stop-opacity="0"/></radialGradient>
+      </defs>
+      <rect width="860" height="380" fill="url(#sky)"/>
+      <rect width="860" height="380" fill="url(#haze)"/>
+      <circle cx="120" cy="205" r="90" fill="url(#sunG)"/><circle cx="120" cy="205" r="38" fill="#fff0a8"/>
+      <ellipse cx="190" cy="80" rx="46" ry="12" fill="#fff" opacity=".35"/><ellipse cx="260" cy="60" rx="34" ry="9" fill="#fff" opacity=".3"/>
+      <g fill="#fff"><circle class="tw" cx="520" cy="40" r="1.8"/><circle class="tw" cx="570" cy="90" r="1.4"/><circle class="tw" cx="620" cy="30" r="2"/><circle class="tw" cx="680" cy="75" r="1.5"/><circle class="tw" cx="720" cy="25" r="1.8"/><circle class="tw" cx="800" cy="60" r="1.6"/><circle class="tw" cx="840" cy="110" r="1.4"/><circle class="tw" cx="480" cy="110" r="1.3"/><circle class="tw" cx="650" cy="125" r="1.6"/><circle class="tw" cx="560" cy="150" r="1.2"/></g>
+      <circle cx="760" cy="55" r="26" fill="#f6f2ff"/><circle cx="770" cy="49" r="22" fill="#1a2c68"/>
+      <path d="M390 235 L520 150 L600 205 L690 120 L790 200 L860 160 V260 H390Z" fill="#2c3a78"/>
+      <path d="M430 260 L560 180 L650 235 L760 160 L860 215 V270 H430Z" fill="#1b2756"/>
+      <g fill="#10183c"><rect x="520" y="232" width="26" height="48"/><rect x="552" y="214" width="20" height="66"/><rect x="578" y="240" width="30" height="40"/><path d="M620 280 V235 a20 20 0 0 1 40 0 V280Z"/><rect x="638" y="200" width="4" height="22"/><rect x="668" y="225" width="26" height="55"/><rect x="700" y="244" width="30" height="36"/></g>
+      <g fill="#ffd96b"><rect x="526" y="240" width="5" height="6"/><rect x="535" y="252" width="5" height="6"/><rect x="558" y="224" width="5" height="6"/><rect x="558" y="244" width="5" height="6"/><rect x="586" y="250" width="5" height="6"/><rect x="674" y="236" width="5" height="6"/><rect x="684" y="252" width="5" height="6"/><rect x="708" y="256" width="5" height="6"/></g>
+      <path d="M0 215 H400 V300 H0Z" fill="url(#sea)"/>
+      <g stroke="#fff" stroke-width="2" fill="none" opacity=".5"><path d="M20 235 q14 -8 28 0 t28 0 t28 0"/><path d="M180 255 q14 -8 28 0 t28 0 t28 0"/><path d="M60 275 q14 -8 28 0 t28 0 t28 0"/><path d="M270 232 q14 -8 28 0 t28 0"/></g>
+      <path d="M90 218 h60 M100 230 h40 M108 243 h24" stroke="#fff3b0" stroke-width="3" opacity=".7"/>
+      <path d="M300 238 h46 l-6 10 h-34z M322 238 V210 l22 24z" fill="#5a2f1a"/>
+      <path d="M0 296 q120 -22 260 -6 T400 300 V310 H0Z" fill="#e2b77a"/>
+      <g fill="#6b4a22"><path d="M240 296 q-4 -50 8 -86 l6 2 q-10 36 -6 84z"/></g>
+      <g fill="#2f8a4a"><path d="M251 210 q-40 -10 -62 20 q34 -14 62 -10z"/><path d="M251 210 q40 -10 62 20 q-34 -14 -62 -10z"/><path d="M251 210 q-20 -34 -50 -30 q30 6 50 30z"/><path d="M251 210 q20 -34 50 -30 q-30 6 -50 30z"/><path d="M251 210 q0 -30 0 -40 q6 20 0 40z"/></g>
+      <g fill="#6b4a22"><path d="M350 298 q-3 -34 5 -60 l5 2 q-8 24 -5 58z"/></g>
+      <g fill="#2f8a4a"><path d="M357 238 q-28 -8 -42 14 q24 -10 42 -8z"/><path d="M357 238 q28 -8 42 14 q-24 -10 -42 -8z"/><path d="M357 238 q-12 -24 -34 -22 q22 4 34 22z"/><path d="M357 238 q12 -24 34 -22 q-22 4 -34 22z"/></g>
+      <g><rect x="22" y="212" width="94" height="88" rx="4" fill="#fff4dc"/><path d="M12 214 L69 168 L126 214Z" fill="#c4452f"/><rect x="26" y="212" width="86" height="4" fill="#e9c98e"/><rect x="38" y="228" width="26" height="28" fill="#ffd36b" stroke="#7a4a1a" stroke-width="3"/><path d="M51 228 v28 M38 242 h26" stroke="#7a4a1a" stroke-width="2"/><rect x="76" y="250" width="26" height="50" rx="12" fill="#8a4a22"/><circle cx="96" cy="276" r="2" fill="#ffd36b"/><circle cx="69" cy="190" r="8" fill="#ffd36b" stroke="#7a4a1a" stroke-width="2"/></g>
+      <g><rect x="744" y="212" width="94" height="88" rx="4" fill="#c9d4f5"/><path d="M734 214 L791 168 L848 214Z" fill="#2b3f7a"/><rect x="796" y="228" width="26" height="28" fill="#fff2a8" stroke="#2b3f7a" stroke-width="3"/><path d="M809 228 v28 M796 242 h26" stroke="#2b3f7a" stroke-width="2"/><rect x="758" y="250" width="26" height="50" rx="12" fill="#3a4a8a"/><circle cx="764" cy="276" r="2" fill="#fff2a8"/><circle cx="791" cy="190" r="8" fill="#fff2a8" stroke="#2b3f7a" stroke-width="2"/><circle cx="809" cy="242" r="30" fill="url(#lamp)"/></g>
+      <rect y="298" width="860" height="82" fill="url(#path)"/>
+      <path d="M0 330 H860 M0 362 H860" stroke="#fff" stroke-opacity=".12" stroke-width="2"/>
+      <g stroke="#fff" stroke-opacity=".12" stroke-width="2"><path d="M80 298 v82 M200 298 v82 M320 298 v82 M440 298 v82 M560 298 v82 M680 298 v82 M800 298 v82"/></g>
+      <g><circle cx="215" cy="262" r="34" fill="url(#lamp)"/><rect x="213" y="262" width="4" height="38" fill="#3a2a1a"/><rect x="207" y="248" width="16" height="16" rx="4" fill="#ffcf5a"/>
+         <circle cx="430" cy="262" r="34" fill="url(#lamp)"/><rect x="428" y="262" width="4" height="38" fill="#3a2a1a"/><rect x="422" y="248" width="16" height="16" rx="4" fill="#ffcf5a"/>
+         <circle cx="645" cy="262" r="34" fill="url(#lamp)"/><rect x="643" y="262" width="4" height="38" fill="#3a2a1a"/><rect x="637" y="248" width="16" height="16" rx="4" fill="#ffcf5a"/></g>
+      <g fill="#ffd96b"><circle class="tw" cx="300" cy="320" r="2.5"/><circle class="tw" cx="480" cy="345" r="2.5"/><circle class="tw" cx="560" cy="318" r="2.5"/><circle class="tw" cx="380" cy="352" r="2"/><circle class="tw" cx="720" cy="340" r="2.5"/></g>
+    </svg>
+    <div id="cloud"></div><div id="say"></div>
+    <div class="who on" id="L"></div>
+    <div class="who" id="M"></div>
+  </div>
+
+  <div id="hud">
+    <span id="c1"><button id="left" aria-label="Move left">◀</button><button id="right" aria-label="Move right">▶</button></span>
+    <span id="c2" class="hide">Layla <button id="l1">◀</button><button id="l2">▶</button> Mariam <button id="m1">◀</button><button id="m2">▶</button></span>
+    <div id="count"></div>
+  </div>
+  <p class="help">Collect 5 memory stars in each level and finish 3 levels. You have 12 seconds to catch each answer. If you answer wrong or too slowly, the angry Lonely Cloud flies down, shocks you and pushes you back! Read the story at the start of every level.</p>
+</main>
+
+<div id="modal"><div class="card" id="card"></div></div>
+
+<script>
+const TFN = ["True","False","Not Given"];
+const LEVELS = [
+  {title:"Multiple choice", q:[
+    {q:"Where does Layla live?", o:["Salalah","Muscat","Nizwa"], a:0},
+    {q:"What does Mariam miss about home?", o:["Her school","Her family's dinners","The sea"], a:1},
+    {q:"When do the sisters make a video call?", o:["On Monday","On Sunday","On Friday"], a:2},
+    {q:"How do the sisters feel after the call?", o:["Angrier","Sleepy","Happier"], a:2},
+    {q:"When will Mariam visit Salalah?", o:["Tomorrow","Next month","Next year"], a:1}]},
+  {title:"True, False or Not Given", q:[
+    {q:"Layla's house is near the sea.", o:TFN, a:0},
+    {q:"Mariam studies in Salalah.", o:TFN, a:1},
+    {q:"Layla's mother is a teacher.", o:TFN, a:2},
+    {q:"Their little brother shows his new drawing.", o:TFN, a:0},
+    {q:"Mariam will visit Salalah next year.", o:TFN, a:1}]},
+  {title:"Mixed challenge", q:[
+    {q:"What will Layla cook for Mariam?", o:["A birthday cake","Fish soup","Her favourite dinner"], a:2},
+    {q:"Mariam has a cat in Muscat.", o:TFN, a:2},
+    {q:"What does the morning air in Salalah smell of?", o:["Salt and frankincense","Flowers and rain","Fresh coffee"], a:0},
+    {q:"The Lonely Cloud makes the sisters feel happy.", o:TFN, a:1},
+    {q:"Mariam lives in a big house.", o:TFN, a:1}]}
+];
+const ENEMY = ["You are too far away!","Nobody remembers you!","Give up and go to sleep!"];
+const WIN = ["Distance cannot break a family!","We are together in our hearts!","Home is where we love each other!"];
+const STAR_X = [18,30,42,58,70];
+const BOOK_X = 50;
+const STORY = [
+  "Layla lives in Salalah with her parents and her little brother. Her house is near the sea, and in the morning the air smells of salt and frankincense. Her sister, Mariam, studies in Muscat. Mariam lives in a small flat near the mountains.",
+  "Every evening, Layla sits by the window and looks at the sea. She misses Mariam very much, and the table feels empty without her. In Muscat, Mariam looks at the mountains from her window. She misses her family's dinners, especially her mother's warm bread.",
+  "They both feel lonely, and the Lonely Cloud whispers that nobody remembers them. On Friday, they decide to make a video call. They laugh, tell stories and show each other their rooms. Their little brother shows his new drawing.",
+  "After the call, they feel happier. Mariam will visit Salalah next month, and Layla promises to cook her favourite dinner."
+];
+
+/* Anime-style chibi girl */
+function chibi(hair, dress, bow, eye){
+  return `<svg viewBox="0 0 100 150" aria-hidden="true">
+  <ellipse cx="50" cy="146" rx="26" ry="4" fill="#0004"/>
+  <rect x="38" y="122" width="9" height="22" rx="4" fill="#ffe3d0"/><rect x="53" y="122" width="9" height="22" rx="4" fill="#ffe3d0"/>
+  <ellipse cx="42" cy="144" rx="9" ry="4" fill="#5a3a2a"/><ellipse cx="58" cy="144" rx="9" ry="4" fill="#5a3a2a"/>
+  <path d="M16 60 Q12 6 50 6 Q88 6 84 60 L88 112 Q72 104 68 80 H32 Q28 104 12 112Z" fill="${hair}"/>
+  <path d="M30 78 Q50 70 70 78 L80 128 H20Z" fill="${dress}"/>
+  <path d="M42 76 Q50 86 58 76 L54 70 H46Z" fill="#fff" opacity=".8"/>
+  <circle cx="24" cy="100" r="6" fill="#ffe3d0"/><circle cx="76" cy="100" r="6" fill="#ffe3d0"/>
+  <rect x="43" y="64" width="14" height="10" fill="#ffd9c0"/>
+  <ellipse cx="50" cy="48" rx="29" ry="27" fill="#ffe8d8"/>
+  <path d="M21 48 Q26 14 52 18 Q76 14 79 48 Q66 30 52 34 Q36 30 21 48Z" fill="${hair}"/>
+  <path d="M40 30 Q48 40 60 30" stroke="${hair}" stroke-width="5" fill="none"/>
+  <ellipse cx="38" cy="54" rx="7" ry="9.5" fill="#2a1f4a"/><ellipse cx="62" cy="54" rx="7" ry="9.5" fill="#2a1f4a"/>
+  <ellipse cx="38" cy="57" rx="5" ry="6" fill="${eye}"/><ellipse cx="62" cy="57" rx="5" ry="6" fill="${eye}"/>
+  <circle cx="35" cy="49" r="3" fill="#fff"/><circle cx="59" cy="49" r="3" fill="#fff"/><circle cx="40" cy="60" r="1.5" fill="#fff"/><circle cx="64" cy="60" r="1.5" fill="#fff"/>
+  <ellipse cx="29" cy="66" rx="5" ry="3" fill="#ff8fa3" opacity=".6"/><ellipse cx="71" cy="66" rx="5" ry="3" fill="#ff8fa3" opacity=".6"/>
+  <path d="M45 69 Q50 74 55 69" stroke="#b5483a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <g fill="${bow}"><path d="M70 22 L86 14 V34Z"/><path d="M70 22 L58 10 L56 30Z"/><circle cx="70" cy="22" r="5"/></g>
+</svg>`;
+}
+const SIS = {
+  L: () => chibi("#5a3320","#ff9a3c","#ffd36b","#7a4a1a"),
+  M: () => chibi("#1e1838","#3f6fd8","#ff8fd0","#3a6ad0")
+};
+const CLOUD = `<svg viewBox="0 0 120 80" aria-hidden="true"><path d="M20 62 Q2 62 6 46 Q8 32 24 34 Q28 12 52 16 Q66 2 84 18 Q108 14 108 38 Q122 44 112 58 Q108 64 98 62Z" fill="#6b5a8a"/><path d="M20 62 Q2 62 6 46 Q8 32 24 34 Q28 12 52 16 Q66 2 84 18 Q108 14 108 38 Q122 44 112 58 Q108 64 98 62Z" fill="#fff" opacity=".1"/><path d="M36 36 L52 42 M84 36 L68 42" stroke="#1a1030" stroke-width="4" stroke-linecap="round"/><circle cx="46" cy="48" r="5" fill="#fff"/><circle cx="74" cy="48" r="5" fill="#fff"/><circle cx="47" cy="49" r="2.5" fill="#1a1030"/><circle cx="73" cy="49" r="2.5" fill="#1a1030"/><path d="M50 62 Q60 56 70 62" stroke="#1a1030" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
+
+/* Story pictures */
+function pic(i){
+  const bg = `<defs><linearGradient id="g${i}" x1="0" x2="1"><stop offset="0" stop-color="#ffb55a"/><stop offset=".5" stop-color="#8a62a8"/><stop offset="1" stop-color="#1a2c68"/></linearGradient></defs><rect width="320" height="110" fill="url(#g${i})"/>`;
+  const f = 'font-size:34px';
+  const art = [
+    `<rect y="70" width="150" height="40" fill="#2aa6c9"/><circle cx="40" cy="62" r="22" fill="#ffe08a"/><text x="70" y="68" style="${f}">🏠</text><text x="20" y="100" style="${f}">🌴</text><text x="120" y="100" style="${f}">⛵</text><text x="200" y="80" style="${f}">⛰️</text><text x="250" y="100" style="${f}">🏙️</text>`,
+    `<rect x="26" y="14" width="100" height="82" rx="8" fill="#ffb26b" stroke="#fff" stroke-width="5"/><rect x="194" y="14" width="100" height="82" rx="8" fill="#16295e" stroke="#fff" stroke-width="5"/><text x="40" y="66" style="${f}">👧🌊</text><text x="206" y="66" style="${f}">👩⛰️</text><text x="140" y="60" style="${f}">💭</text>`,
+    `<rect x="40" y="10" width="80" height="90" rx="12" fill="#222" stroke="#fff" stroke-width="3"/><rect x="200" y="10" width="80" height="90" rx="12" fill="#222" stroke="#fff" stroke-width="3"/><text x="58" y="65" style="${f}">👧</text><text x="218" y="65" style="${f}">👩</text><text x="136" y="62" style="${f}">💕</text><text x="130" y="95" style="font-size:16px;fill:#fff">Friday</text>`,
+    `<text x="20" y="64" style="${f}">📅</text><text x="80" y="64" style="${f}">🚌</text><text x="140" y="64" style="${f}">🍲</text><text x="200" y="64" style="${f}">🍞</text><text x="256" y="64" style="${f}">💛</text><text x="20" y="98" style="font-size:16px;fill:#fff">Next month</text>`
+  ][i];
+  return `<svg viewBox="0 0 320 110" role="img" aria-label="Picture for the story">${bg}${art}</svg>`;
+}
+
+let aiTimer, pos, active, stars, got, busy, level = 0, mode = 1, sc = {L:0,M:0}, stun = {L:false,M:false}, wander, last = "L";
+const NAME = {L:"Layla", M:"Mariam"};
+const PUSH = [8,12,16];
+const $ = id => document.getElementById(id);
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+
+function startLevel(){
+  pos = {L:8, M:92}; active = "L"; got = 0; busy = false; stun = {L:false,M:false};
+  stars = STAR_X.map((x,i)=>({x, i, done:false}));
+  document.querySelectorAll(".star").forEach(e=>e.remove());
+  stars.forEach(s=>{
+    const el = document.createElement("div");
+    el.className = "star"; el.textContent = "⭐"; el.style.left = s.x+"%";
+    s.el = el; $("scene").appendChild(el);
+  });
+  const c = $("cloud");
+  c.className = ""; c.style.opacity = 1; c.style.left = "50%"; c.style.width = (17 + level*3)+"%";
+  ["L","M"].forEach(w=>$(w).classList.remove("stun"));
+  $("modal").classList.remove("show");
+  $("sub").textContent = "Level "+(level+1)+" of 3: "+LEVELS[level].title;
+  clearInterval(wander);
+  wander = setInterval(()=>{
+    if(busy || c.classList.contains("atk")) return;
+    c.style.left = (15 + Math.random()*70)+"%";
+  }, 3000 - level*700);
+  clearInterval(aiTimer);
+  if(mode===1) aiTimer = setInterval(aiStep, 380);
+  render();
+  showStory();
+}
+
+function render(){
+  $("L").style.left = pos.L+"%";
+  $("M").style.left = pos.M+"%";
+  $("L").classList.add("on"); $("M").classList.add("on");
+  $("count").textContent = "Layla ⭐"+sc.L+"  Mariam ⭐"+sc.M+"  ("+got+"/5)";
+}
+
+function move(who, d){
+  if(busy || stun[who]) return;
+  pos[who] = Math.max(8, Math.min(92, pos[who] + d*2));
+  render();
+  const s = stars.find(s=>!s.done && Math.abs(s.x - pos[who]) < 3);
+  if(s){ (mode===1 && who==="M" ? askAI : ask)(s, who); }
+}
+
+function showStory(){
+  busy = true;
+  const card = $("card");
+  card.innerHTML = "<h2>📖 Read the story first</h2><p class='hint'>Level "+(level+1)+": "+LEVELS[level].title+". You have 12 seconds for each answer!</p><div class='story'></div>";
+  const box = card.querySelector(".story");
+  STORY.forEach((t,i)=>{
+    box.insertAdjacentHTML("beforeend", pic(i));
+    const p = document.createElement("p"); p.textContent = t; box.appendChild(p);
+  });
+  const b = document.createElement("button");
+  b.textContent = "Start level "+(level+1)+" ▶";
+  b.onclick = ()=>{ $("modal").classList.remove("show"); busy = false; };
+  card.appendChild(b);
+  $("modal").classList.add("show");
+}
+
+function award(s, who){
+  s.done = true; s.el.classList.add("got"); got++; sc[who]++; render();
+  if(got === 5) levelDone();
+}
+
+function aiStep(){
+  if(busy || stun.M) return;
+  const open = stars.filter(s=>!s.done);
+  if(!open.length) return;
+  const t = open.reduce((a,b)=>Math.abs(a.x-pos.M) <= Math.abs(b.x-pos.M) ? a : b);
+  move("M", t.x < pos.M ? -1 : 1);
+}
+
+function askAI(s, who){
+  busy = true;
+  const item = LEVELS[level].q[s.i];
+  const card = $("card");
+  card.innerHTML = "<h2></h2><p class='hint'>Mariam 🤖 is thinking...</p><div class='catch'></div>";
+  card.querySelector("h2").textContent = "Mariam (AI): " + item.q;
+  const area = card.querySelector(".catch"), bs = [];
+  item.o.forEach((text, n)=>{
+    const b = document.createElement("button");
+    b.className = "bubble"; b.textContent = text; b.disabled = true;
+    b.style.top = (n*56 + 6)+"px";
+    b.style.setProperty("--d", (2.2 + n*0.9)+"s");
+    area.appendChild(b); bs.push(b);
+  });
+  $("modal").classList.add("show");
+  const ok = Math.random() < [0.8,0.7,0.6][level];
+  const pick = ok ? item.a : rnd([0,1,2].filter(n=>n !== item.a));
+  setTimeout(()=>{
+    bs[pick].classList.add(ok ? "good" : "bad");
+    setTimeout(()=>{
+      $("modal").classList.remove("show"); busy = false;
+      if(ok) award(s, who); else attack(who, s);
+    }, 900);
+  }, 2500 + Math.random()*3500);
+}
+
+function ask(s, who){
+  busy = true;
+  const item = LEVELS[level].q[s.i];
+  const tf = item.o === TFN;
+  const card = $("card");
+  card.innerHTML = "<h2></h2><p class='hint'></p><div class='timer'><i></i></div><div class='catch'></div>";
+  card.querySelector("h2").textContent = (mode===2 ? NAME[who]+": " : "") + item.q;
+  const hint = card.querySelector(".hint");
+  const base = tf ? "True, False or Not Given? Catch the answer!" : "Catch the right answer!";
+  let t = 12;
+  hint.textContent = "⏱ 12s · " + base;
+  const iv = setInterval(()=>{
+    t -= 0.25;
+    hint.textContent = "⏱ " + Math.max(0, Math.ceil(t)) + "s · " + base;
+    if(t <= 0){
+      clearInterval(iv);
+      $("modal").classList.remove("show"); busy = false;
+      attack(who, s, "Too slow!");
+    }
+  }, 250);
+  const area = card.querySelector(".catch");
+  item.o.forEach((text, n)=>{
+    const b = document.createElement("button");
+    b.className = "bubble";
+    b.textContent = text;
+    b.style.top = (n*56 + 6)+"px";
+    b.style.setProperty("--d", (2.2 + n*0.9 - level*0.3)+"s");
+    b.onclick = ()=>{
+      clearInterval(iv);
+      $("modal").classList.remove("show"); busy = false;
+      if(n === item.a) award(s, who); else attack(who, s);
+    };
+    area.appendChild(b);
+  });
+  $("modal").classList.add("show");
+  const bar = card.querySelector(".timer i");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>bar.style.width = "0%"));
+}
+
+function attack(who, s, msg){
+  const c = $("cloud");
+  c.style.left = pos[who]+"%"; c.classList.add("atk");
+  speak(msg || rnd(ENEMY));
+  stun[who] = true; $(who).classList.add("stun");
+  const dir = pos[who] > s.x ? 1 : pos[who] < s.x ? -1 : (who==="L" ? -1 : 1);
+  setTimeout(()=>{ pos[who] = Math.max(8, Math.min(92, pos[who] + dir*PUSH[level])); render(); }, 450);
+  setTimeout(()=>{ c.classList.remove("atk"); stun[who] = false; $(who).classList.remove("stun"); }, 2200);
+}
+
+function speak(t){
+  const el = $("say"); el.textContent = "☁️ "+t; el.style.opacity = 1;
+  setTimeout(()=>el.style.opacity = 0, 2200);
+}
+
+function scoreLine(){
+  return "<p>Layla ⭐ "+sc.L+" · Mariam ⭐ "+sc.M+"</p>";
+}
+
+function levelDone(){
+  busy = true;
+  const card = $("card");
+  if(level < 2){
+    card.innerHTML = "<h2>🎉 Level "+(level+1)+" complete!</h2>"+scoreLine()+"<p>Next: <b>"+LEVELS[level+1].title+"</b>. The cloud is getting faster and angrier!</p>";
+    const b = document.createElement("button");
+    b.textContent = "Next level ▶";
+    b.onclick = ()=>{ level++; startLevel(); };
+    card.appendChild(b);
+  } else win();
+  $("modal").classList.add("show");
+}
+
+function win(){
+  busy = true; clearInterval(wander); clearInterval(aiTimer);
+  $("cloud").style.opacity = 0;
+  const card = $("card");
+  card.innerHTML = "<h2>📞 Video call! You won all 3 levels!</h2><div style='display:flex;justify-content:center;gap:16px'><div style='width:90px'>"+SIS.L()+"</div><div style='width:90px'>"+SIS.M()+"</div></div>"+scoreLine()+"<p>Layla and Mariam call their family. The Lonely Cloud disappears.</p>";
+  WIN.forEach(t=>{ const p = document.createElement("p"); p.textContent = "💛 "+t; card.appendChild(p); });
+  const b = document.createElement("button");
+  b.textContent = "Play again";
+  b.onclick = ()=>{ level = 0; sc = {L:0,M:0}; startLevel(); };
+  card.appendChild(b);
+  $("modal").classList.add("show");
+}
+
+document.addEventListener("keydown", e=>{
+  if($("game").style.display !== "flex") return;
+  const k = e.key;
+  if(["ArrowLeft","ArrowRight"," "].includes(k)) e.preventDefault();
+  if(mode===1){
+    if(k==="ArrowRight"||k==="d"||k==="D") move("L",1);
+    else if(k==="ArrowLeft"||k==="a"||k==="A") move("L",-1);
+  } else {
+    if(k==="d"||k==="D") move("L",1);
+    else if(k==="a"||k==="A") move("L",-1);
+    else if(k==="ArrowRight") move("M",1);
+    else if(k==="ArrowLeft") move("M",-1);
+  }
+});
+$("left").onclick = ()=>move("L",-1);
+$("right").onclick = ()=>move("L",1);
+$("l1").onclick = ()=>move("L",-1); $("l2").onclick = ()=>move("L",1);
+$("m1").onclick = ()=>move("M",-1); $("m2").onclick = ()=>move("M",1);
+
+$("pL").innerHTML = SIS.L(); $("pM").innerHTML = SIS.M();
+$("L").innerHTML = SIS.L() + "<b>Layla</b>";
+$("M").innerHTML = SIS.M() + "<b>Mariam</b>";
+$("cloud").innerHTML = CLOUD;
+document.querySelectorAll("[data-m]").forEach(btn=>btn.onclick = ()=>{
+  mode = +btn.dataset.m; level = 0; sc = {L:0,M:0};
+  $("c1").classList.toggle("hide", mode===2);
+  $("c2").classList.toggle("hide", mode===1);
+  $("M").querySelector("b").textContent = mode===1 ? "Mariam 🤖" : "Mariam";
+  $("intro").style.display = "none";
+  $("game").style.display = "flex";
+  startLevel();
+});
+</script>
+</body>
+</html>

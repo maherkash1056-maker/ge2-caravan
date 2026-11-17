@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Royale</title>
+<style>
+:root{--bg:#f3e8cf;--card:#fffaf0;--ink:#24170f;--muted:#6b5541;--line:#d8c39c;--red:#b7432d;--gold:#e0b046;--teal:#2f6f69;--ok:#2f6f69;--bad:#b7432d;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Alegreya Sans","Trebuchet MS",system-ui,sans-serif;font-size:18px;padding:12px max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));min-height:100vh}
+h1{font-family:"Rum Raisin","Trebuchet MS",sans-serif;font-size:28px;margin:0}.sub{color:var(--muted);margin:2px 0 12px;font-size:15px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin:0 0 12px}
+.btn{font:inherit;font-weight:800;font-size:18px;padding:12px 18px;border-radius:12px;border:2px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer;width:100%}.btn.p{background:var(--red);color:#fff;border-color:var(--red)}
+input.code{font:inherit;font-size:34px;letter-spacing:.3em;text-align:center;text-transform:uppercase;width:100%;padding:10px;border:2px solid var(--line);border-radius:12px;background:#fff}
+.status{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin:0 0 8px}.status .me{color:var(--teal)}.status .ghost{color:#777}
+.timer{height:12px;background:#fff;border:2px solid var(--line);border-radius:10px;overflow:hidden;margin:6px 0 10px}.timer i{display:block;height:100%;background:var(--gold);width:100%;transition:width .25s linear}
+.qtext{white-space:pre-wrap;font-size:17px;line-height:1.45;background:#fff;border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px}
+.q{font-size:22px;font-weight:800;line-height:1.3;margin:0 0 10px}
+.opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;font-size:20px;font-weight:700;padding:14px;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);margin:0 0 10px;cursor:pointer;min-height:60px}.opt b{display:inline-grid;place-items:center;min-width:40px;height:40px;border-radius:10px;background:var(--gold)}.opt.sel{border-color:var(--teal);background:#e3f1ee}.opt.ok{border-color:var(--ok);background:#dff0e6}.opt.no{opacity:.45}.opt:disabled{cursor:default}
+.big{font-size:34px;font-weight:800;text-align:center;margin:10px 0}.hint{color:var(--muted)}.err{color:var(--bad);font-weight:700}
+.hide{display:none!important}.badge{display:inline-block;background:var(--gold);border-radius:999px;padding:2px 10px;font-weight:800;font-size:14px}
+</style></head><body>
+<h1>👑 Word Royale</h1><p class="sub">Answer fast. Wrong or slowest 20 % leave the circle. Ghosts still earn XP.</p>
+<section class="card" id="join"><p id="who" class="hint" style="margin:0 0 8px">Checking your login…</p>
+ <label>Room code<input class="code" id="room" maxlength="5" autocomplete="off" autocapitalize="characters" placeholder="ABCDE"></label>
+ <button class="btn p" id="go" style="margin-top:12px">Join the circle</button><p class="err" id="jerr"></p></section>
+<section class="card hide" id="wait"><p class="big">You're in! 🟢</p><p class="hint" style="text-align:center">Room <b id="rcode"></b> · <span id="pc">1</span> players · waiting for the teacher to start…</p></section>
+<section class="card hide" id="play">
+ <div class="status"><span id="rnd">Round 1</span><span id="mestat" class="me">in the circle</span><span>⭐ <span id="score">0</span></span></div>
+ <div class="timer"><i id="bar"></i></div>
+ <div class="qtext hide" id="text"></div><p class="q" id="q"></p><div id="opts"></div>
+ <p id="fb" class="hint" style="margin:6px 0 0"></p>
+</section>
+<section class="card hide" id="over"><p class="big" id="final"></p><p id="place" style="text-align:center"></p><p class="hint" style="text-align:center">Your XP is saved. Close this tab to go back to the Caravan.</p></section>
+<p class="err" id="err"></p>
+<script>
+const HOOK=window.CARAVAN_HOOK||"https://ge2-caravan-api.ge2-caravan.workers.dev/";const SERVER=window.CARAVAN_SERVER||"https://ge2-caravan-server.ge2-caravan.workers.dev";
+const E=s=>document.querySelector(s);const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function sessionFromHash(){const h=location.hash.replace(/^#/,"");let s="";h.split("&").forEach(seg=>{if(seg.indexOf("s=")===0)s=seg.slice(2);});if(!s)return null;const a=s.split("~");if(a.length<2)return null;return{token:a[0],id:a[1],role:a[2]||"student",name:decodeURIComponent(a[3]||""),short:decodeURIComponent(a[4]||"")};}
+const S=sessionFromHash();const q=new URLSearchParams(location.search);if(q.get("room"))E("#room").value=q.get("room").toUpperCase();
+if(!S){E("#who").textContent="Log in on the Caravan page first (1 · My exam), then open Word Royale from the Play tab.";E("#go").disabled=true;}else E("#who").textContent="Playing as "+(S.short||S.name);
+let ws,alive=true,answered=false,myScore=0,myCorrect=0,myAnswers=0,skillsStat={},currentQ=null,barT=null;
+E("#go").addEventListener("click",async()=>{const code=E("#room").value.toUpperCase().replace(/[^A-Z0-9]/g,"");if(code.length!==5){E("#jerr").textContent="The code has 5 letters/numbers.";return;}
+ E("#go").disabled=true;E("#jerr").textContent="";try{const info=await (await fetch(SERVER+"/rooms/"+code)).json();if(!info.ok)throw new Error("No room with that code.");
+  ws=new WebSocket(SERVER.replace(/^http/,"ws")+"/ws/"+code+"?role=player&id="+encodeURIComponent(S.id)+"&name="+encodeURIComponent(S.short||S.name||S.id));
+  ws.onopen=()=>{E("#join").classList.add("hide");E("#wait").classList.remove("hide");E("#rcode").textContent=code;setInterval(()=>send({t:"ping"}),25000);};
+  ws.onmessage=e=>onMsg(JSON.parse(e.data));ws.onclose=()=>{E("#err").textContent="Connection closed. Reload and join again with the same code.";};ws.onerror=()=>{E("#jerr").textContent="Could not connect.";E("#go").disabled=false;};}
+ catch(e){E("#jerr").textContent=e.message;E("#go").disabled=false;}});
+function send(m){if(ws&&ws.readyState===1)ws.send(JSON.stringify(m));}
+function onMsg(m){
+ if(m.t==="players"){E("#pc").textContent=m.players.filter(p=>p.connected).length;const me=m.players.find(p=>p.id===S.id);if(me){alive=me.alive;myScore=me.score;E("#score").textContent=myScore;E("#mestat").textContent=alive?"in the circle":"👻 ghost — keep answering for XP";E("#mestat").className=alive?"me":"ghost";}}
+ if(m.t==="question"){currentQ=m.question;answered=false;E("#wait").classList.add("hide");E("#play").classList.remove("hide");E("#rnd").textContent="Round "+m.round;E("#fb").textContent="";
+  E("#text").classList.toggle("hide",!currentQ.text);E("#text").textContent=currentQ.text||"";E("#q").textContent=currentQ.q;E("#opts").innerHTML=currentQ.options.map((o,i)=>'<button class="opt" data-i="'+i+'"><b>'+"ABC"[i]+'</b><span>'+esc(o)+'</span></button>').join("");
+  document.querySelectorAll("#opts .opt").forEach(b=>b.addEventListener("click",()=>{if(answered)return;answered=true;send({t:"answer",v:+b.dataset.i});b.classList.add("sel");document.querySelectorAll("#opts .opt").forEach(x=>x.disabled=true);E("#fb").textContent="Sent — waiting for the others…";}));
+  const total=m.deadline-Date.now();clearInterval(barT);barT=setInterval(()=>{const left=Math.max(0,m.deadline-Date.now());E("#bar").style.width=(100*left/total)+"%";if(left<=0){clearInterval(barT);document.querySelectorAll("#opts .opt").forEach(x=>x.disabled=true);}},200);
+  if(navigator.vibrate)navigator.vibrate(30);}
+ if(m.t==="reveal"){clearInterval(barT);const r=m.results;if(m.players){const me=m.players.find(p=>p.id===S.id);if(me){alive=me.alive;myScore=me.score;E("#score").textContent=myScore;E("#mestat").textContent=alive?"in the circle":"👻 ghost — keep answering for XP";E("#mestat").className=alive?"me":"ghost";}}document.querySelectorAll("#opts .opt").forEach(o=>{o.disabled=true;o.classList.add(+o.dataset.i===r.correct?"ok":"no");});const mine=r.rows.find(x=>x.id===S.id);myAnswers++;const k=(currentQ&&currentQ.type==="tfng")?"r_tfng":"r_abc";skillsStat[k]=skillsStat[k]||{r:0,n:0};skillsStat[k].n++;if(mine&&mine.ok){myCorrect++;skillsStat[k].r++;}
+  E("#fb").innerHTML=(mine&&mine.ok?"✅ Correct! ":"❌ "+(mine&&mine.ms!=null?"Not this time. ":"Too slow. "))+esc(r.why||"")+(r.out.some(o=>o.id===S.id)?' <span class="badge">You are out of the circle — you can still answer as a ghost</span>':"");}
+ if(m.t==="revived"&&m.id===S.id){alive=true;E("#mestat").textContent="in the circle — revived!";E("#mestat").className="me";}
+ if(m.t==="state"&&m.state.phase==="end"){E("#play").classList.add("hide");E("#over").classList.remove("hide");const st=m.state.players.slice().sort((a,b)=>(b.alive-a.alive)||(b.score-a.score));const place=st.findIndex(p=>p.id===S.id)+1;const w=m.state.winner;
+  E("#final").textContent=w&&w.id===S.id?"👑 You won the Royale!":place>0&&place<=5?"🍗 Chicken dinner — top "+place+"!":"Game over";E("#place").textContent="Place "+place+" of "+st.length+" · "+myCorrect+" / "+myAnswers+" correct · "+myScore+" points";report(place,st.length);}
+}
+function report(place,total){if(!S||!myAnswers)return;const sk=Object.keys(skillsStat).map(k=>({id:k,name:k==="r_tfng"?"True / False / Not Given":"A, B or C",r:skillsStat[k].r,n:skillsStat[k].n}));
+ fetch(HOOK,{method:"POST",headers:{"content-type":"text/plain;charset=UTF-8"},body:JSON.stringify({kind:"result",token:S.token,student:S.name,device:"ROYALE",type:"Class game",exam:"Word Royale",right:myCorrect,total:myAnswers,grade:"",score:myScore+(place===1?60:place<=5?30:place<=10?15:0),won:place===1,skills:sk,weakest:"",badges:place===1?["crown"]:place<=5?["chicken"]:[]})}).catch(()=>{});}
+</script></body></html>

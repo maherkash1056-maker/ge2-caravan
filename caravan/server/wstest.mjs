@@ -1,0 +1,16 @@
+const BASE="https://ge2-caravan-server.ge2-caravan.workers.dev";
+const r=await (await fetch(BASE+"/rooms",{method:"POST",body:JSON.stringify({game:"royale",hostToken:"testhost12345"})})).json();
+console.log("room",r.code);
+const open=(url)=>new Promise((res,rej)=>{const ws=new WebSocket(url);ws.onopen=()=>res(ws);ws.onerror=e=>rej(e);});
+const log=(who,ws)=>{ws.onmessage=e=>{const m=JSON.parse(e.data);if(["players","pong"].includes(m.t))return;console.log(who,"<-",m.t,m.t==="question"?m.question.q:m.t==="reveal"?JSON.stringify({correct:m.results.correct,out:m.results.out.map(o=>o.name+":"+o.why),alive:m.results.alive}):m.t==="state"?m.state.phase+(m.state.winner?" winner="+m.state.winner.name:""):"");};};
+const host=await open(r.ws+"?role=host&token=testhost12345");log("host",host);
+const p1=await open(r.ws+"?role=player&id=46J2696&name=Abdullah");log("p1  ",p1);
+const p2=await open(r.ws+"?role=player&id=41J2668&name=Rayan");log("p2  ",p2);
+const send=(ws,m)=>ws.send(JSON.stringify(m));const wait=ms=>new Promise(r=>setTimeout(r,ms));
+await wait(500);
+send(host,{t:"load",questions:[{type:"abc",q:"Where is Salalah?",o:["Oman","Egypt","Qatar"],a:0,why:"Salalah is in Dhofar, Oman."},{type:"tfng",q:"Frankincense grows in Dhofar.",o:["True","False","Not Given"],a:0,why:"It does."}]});
+await wait(300);send(host,{t:"start"});await wait(300);send(host,{t:"next",seconds:20});await wait(400);
+send(p1,{t:"answer",v:0});await wait(200);send(p2,{t:"answer",v:1});await wait(800);
+send(host,{t:"next",seconds:20});await wait(400);send(p1,{t:"answer",v:0});await wait(300);send(p2,{t:"answer",v:0});await wait(1200);
+const info=await (await fetch(BASE+"/rooms/"+r.code)).json();console.log("info",JSON.stringify(info));
+host.close();p1.close();p2.close();process.exit(0);

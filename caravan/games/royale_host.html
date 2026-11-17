@@ -1,0 +1,111 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Word Royale · Host</title>
+<style>
+:root{--bg:#f3e8cf;--card:#fffaf0;--ink:#24170f;--muted:#6b5541;--line:#d8c39c;--red:#b7432d;--gold:#e0b046;--teal:#2f6f69;--ok:#2f6f69;--bad:#b7432d;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Alegreya Sans","Trebuchet MS",system-ui,sans-serif;font-size:18px;padding:16px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left))}
+h1{font-family:"Rum Raisin","Trebuchet MS",sans-serif;font-size:34px;margin:0}.sub{color:var(--muted);margin:2px 0 14px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font:inherit;font-weight:800;font-size:18px;padding:10px 20px;border-radius:12px;border:2px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer}.btn.p{background:var(--red);color:#fff;border-color:var(--red)}.btn.t{background:var(--teal);color:#fff;border-color:var(--teal)}.btn:disabled{opacity:.5;cursor:default}
+.chip{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:999px;padding:4px 12px;background:#fff;cursor:pointer;font-weight:700}.chip input{margin:0}
+.code{font-family:"Rum Raisin","Trebuchet MS",sans-serif;font-size:min(22vw,160px);letter-spacing:.12em;line-height:1;color:var(--red);text-align:center;margin:6px 0}
+.big{font-size:40px;font-weight:800;text-align:center;line-height:1.25}.qtext{white-space:pre-wrap;font-size:22px;line-height:1.45;background:#fff;border:2px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:10px 0}.opt{border:3px solid var(--line);border-radius:14px;padding:14px 16px;font-size:26px;font-weight:800;background:#fff}.opt b{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--gold);margin-right:10px}.opt.ok{border-color:var(--ok);background:#dff0e6}.opt.no{opacity:.45}
+.timer{height:16px;background:#fff;border:2px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0}.timer i{display:block;height:100%;background:var(--gold);width:100%;transition:width .25s linear}
+.circle{position:relative;width:min(70vw,460px);height:min(70vw,460px);margin:0 auto;border-radius:50%;border:4px dashed var(--red);display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;padding:30px}
+.dot{background:var(--teal);color:#fff;border-radius:999px;padding:6px 12px;font-weight:800;font-size:16px;animation:pop .3s}.dot.out{background:#aaa;color:#222;text-decoration:line-through;opacity:.8}.dot.ans{outline:4px solid var(--gold)}
+@keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
+table{border-collapse:collapse;width:100%;font-size:18px}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.hint{color:var(--muted)}.err{color:var(--bad);font-weight:700}
+.hide{display:none!important}
+</style></head><body>
+<h1>👑 Word Royale <span class="hint" style="font-size:18px;font-weight:400">· host</span></h1>
+<p class="sub">Group 9 · the circle shrinks every question · last one standing wins</p>
+
+<section class="card" id="setup">
+  <div class="row" style="justify-content:space-between"><b id="who">Checking your login…</b><span class="hint" id="qstatus"></span></div>
+  <h3 style="margin:12px 0 6px">1 · Skills in this game</h3>
+  <div class="row" id="skills"></div>
+  <h3 style="margin:14px 0 6px">2 · Size</h3>
+  <div class="row"><label>Questions <select id="n" class="btn" style="font-weight:600"><option>8</option><option selected>10</option><option>12</option><option>15</option></select></label>
+  <label>Seconds per question <select id="secs" class="btn" style="font-weight:600"><option>15</option><option selected>20</option><option>30</option></select></label>
+  <label>Topic (optional) <input id="topic" class="btn" style="font-weight:600;min-width:220px" placeholder="e.g. sea turtles, halwa, the khareef"></label></div>
+  <div class="row" style="margin-top:14px"><button class="btn p" id="make">✨ Ask Claude for the questions, then open the room</button><span id="mkmsg" class="hint"></span></div>
+</section>
+
+<section class="card hide" id="lobby">
+  <p class="hint" style="text-align:center;margin:0">Join at <b>the Caravan page → Play → Word Royale</b> and type this code:</p>
+  <div class="code" id="code">·····</div>
+  <div class="row" style="justify-content:center"><span class="hint"><b id="pcount">0</b> players in the circle</span></div>
+  <div class="circle" id="circle"></div>
+  <div class="row" style="justify-content:center;margin-top:14px"><button class="btn p" id="start" disabled>▶ Start the game</button></div>
+</section>
+
+<section class="card hide" id="game">
+  <div class="row" style="justify-content:space-between"><b id="roundlbl">Round 1</b><span><b id="alive">0</b> in the circle · <span id="answered">0</span> answered</span><span class="hint">room <b id="code2"></b></span></div>
+  <div class="timer"><i id="bar"></i></div>
+  <div class="qtext hide" id="text"></div>
+  <div class="big" id="q">…</div>
+  <div class="opts" id="opts"></div>
+  <div id="reveal" class="hide"><p class="big" id="why" style="font-size:22px;color:var(--teal)"></p><p id="out" style="text-align:center;font-weight:700"></p></div>
+  <div class="circle" id="circle2" style="width:min(50vw,360px);height:min(50vw,360px)"></div>
+  <div class="row" style="justify-content:center;margin-top:12px"><button class="btn t" id="next">Next question ▶</button><button class="btn" id="pause">⏸ Pause</button><button class="btn" id="revive" title="Bring back the best ghost">👻 Revive the best ghost</button><button class="btn" id="end">Finish</button></div>
+  <p class="hint" style="text-align:center;margin:6px 0 0">Auto-pace: next question 8 s after the reveal. Pause stops it.</p>
+</section>
+
+<section class="card hide" id="over">
+  <h2 style="margin:0 0 6px">🏆 Winner: <span id="winner"></span></h2>
+  <table id="standings"></table>
+  <div class="row" style="margin-top:12px"><button class="btn p" id="again">New game</button></div>
+</section>
+<p class="err" id="err"></p>
+
+<script>
+const HOOK=window.CARAVAN_HOOK||"https://ge2-caravan-api.ge2-caravan.workers.dev/";
+const SERVER=window.CARAVAN_SERVER||"https://ge2-caravan-server.ge2-caravan.workers.dev";
+const SKILLS=[["r_tfng","True / False / Not Given"],["r_abc","A, B or C (short text)"],["v_awl","Textbook vocabulary"],["g_tense","Tenses"],["g_passive","The passive"],["g_modal","Modals"],["g_cond","Conditionals"],["g_link","Linking words"],["g_prep","Prepositions"]];
+const E=s=>document.querySelector(s);const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function sessionFromHash(){const h=location.hash.replace(/^#/,"");let s="";h.split("&").forEach(seg=>{if(seg.indexOf("s=")===0)s=seg.slice(2);});if(!s)return null;const a=s.split("~");if(a.length<2)return null;return{token:a[0],id:a[1],role:a[2]||"student",name:decodeURIComponent(a[3]||""),short:decodeURIComponent(a[4]||"")};}
+const S=sessionFromHash();let ws=null,ROOM=null,QS=[],secs=20,autoT=null,barT=null,paused=false;
+E("#skills").innerHTML=SKILLS.map(([id,n],i)=>'<label class="chip"><input type="checkbox" value="'+id+'"'+(i<3?' checked':'')+'>'+n+'</label>').join("");
+if(!S||S.role!=="teacher"){E("#who").textContent="Teacher login needed — open this page from the Teacher tab of the Caravan page.";E("#make").disabled=true;}else E("#who").textContent="Host: "+(S.short||S.name);
+async function post(payload){const r=await fetch(HOOK,{method:"POST",headers:{"content-type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload)});return await r.json();}
+function prompt(skills,n,topic){const want=skills.map(id=>SKILLS.find(s=>s[0]===id)[1]).join(", ");
+ return ["Write "+n+" quick quiz items for a live class game (Word Royale) for General English 2 students (CEFR B1, UTAS Salalah, Arabic speakers 18-21). Skills to cover, shared evenly: "+want+".",
+ "Topic/theme to keep in mind: "+(topic||"the themes of our course: the sea, culture and tradition, happiness, technology")+".",
+ "Item rules: every item has exactly 3 options and one correct answer. 'tfng' items need a 2-3 sentence mini text in \"text\" and a statement in \"q\"; 'abc' items may also use a 2-3 sentence \"text\". Vocabulary items test a textbook word in a sentence (meaning or correct word). Grammar items: choose the correct form. One short, simple \"why\" per item. B1 level, 10-20-word sentences, suitable for a university in Oman.",
+ "OUTPUT: reply with ONLY one JSON object: {\"title\":\"2-4 words\",\"questions\":[{\"type\":\"tfng\",\"text\":\"…\",\"q\":\"…\",\"options\":[\"True\",\"False\",\"Not Given\"],\"answer\":\"A\",\"why\":\"…\",\"skill\":\"r_tfng\"},{\"type\":\"abc\",\"text\":\"\",\"q\":\"…\",\"options\":[\"…\",\"…\",\"…\"],\"answer\":\"B\",\"why\":\"…\",\"skill\":\"g_tense\"}]} — \"answer\" is A, B or C."].join("\n");}
+function normalise(txt){let j=txt;if(typeof j==="string"){const m=j.match(/\{[\s\S]*\}/);j=JSON.parse(m?m[0]:j);}return (j.questions||[]).filter(q=>Array.isArray(q.options)&&q.options.length===3).map(q=>({type:q.type||"abc",text:q.text||"",q:q.q,o:q.options,a:Math.min(2,Math.max(0,String(q.answer||"A").trim().toUpperCase().charCodeAt(0)-65)),why:q.why||"",skill:q.skill||""}));}
+E("#make").addEventListener("click",async()=>{const skills=[...document.querySelectorAll("#skills input:checked")].map(i=>i.value);if(!skills.length){E("#mkmsg").textContent="Tick at least one skill.";return;}
+ const n=+E("#n").value;secs=+E("#secs").value;E("#make").disabled=true;E("#mkmsg").textContent="Claude is writing "+n+" questions… (20-40 s)";
+ try{const j=await post({kind:"exam",token:S.token,student:S.name,device:"ROYALE",prompt:prompt(skills,n,E("#topic").value.trim()),images:[],fast:true,skills,len:n,style:false,awl:true,game:"Word Royale"});
+  if(!j.ok)throw new Error(j.error||"Claude did not answer");QS=normalise(j.text);if(QS.length<4)throw new Error("Too few questions came back — try again.");
+  E("#mkmsg").textContent=QS.length+" questions ready. Opening the room…";await openRoom();}
+ catch(e){E("#mkmsg").textContent="";E("#err").textContent=e.message||String(e);E("#make").disabled=false;}});
+async function openRoom(){const hostToken=S.token.slice(0,32);const r=await (await fetch(SERVER+"/rooms",{method:"POST",body:JSON.stringify({game:"royale",hostToken})})).json();if(!r.ok)throw new Error(r.error||"Could not open a room");ROOM=r;
+ E("#code").textContent=r.code;E("#code2").textContent=r.code;E("#setup").classList.add("hide");E("#lobby").classList.remove("hide");
+ ws=new WebSocket(r.ws+"?role=host&token="+encodeURIComponent(hostToken));ws.onopen=()=>{send({t:"load",questions:QS.map(q=>({type:q.type,text:q.text,q:q.q,o:q.o,a:q.a,why:q.why,skill:q.skill,seconds:q.text?Math.max(secs,30):secs}))});};
+ ws.onmessage=e=>onMsg(JSON.parse(e.data));ws.onclose=()=>{E("#err").textContent="Connection to the game server closed. Reload to reopen.";};setInterval(()=>send({t:"ping"}),25000);}
+function send(m){if(ws&&ws.readyState===1)ws.send(JSON.stringify(m));}
+let players=[];
+function drawCircle(el,ansSet){el.innerHTML=players.map(p=>'<span class="dot '+(p.alive?"":"out")+(ansSet&&ansSet.has(p.id)?" ans":"")+'">'+esc(p.name)+'</span>').join("");}
+const answered=new Set();
+function onMsg(m){
+ if(m.t==="players"){players=m.players;E("#pcount").textContent=players.filter(p=>p.connected).length;E("#start").disabled=players.length<1;drawCircle(E("#circle"));drawCircle(E("#circle2"),answered);E("#alive").textContent=players.filter(p=>p.alive).length;}
+ if(m.t==="question"){clearTimeout(autoT);answered.clear();E("#lobby").classList.add("hide");E("#over").classList.add("hide");E("#game").classList.remove("hide");E("#reveal").classList.add("hide");E("#roundlbl").textContent="Round "+m.round;E("#answered").textContent=0;
+  const q=m.question;E("#text").classList.toggle("hide",!q.text);E("#text").textContent=q.text||"";E("#q").textContent=q.q;E("#opts").innerHTML=q.options.map((o,i)=>'<div class="opt" data-i="'+i+'"><b>'+"ABC"[i]+'</b>'+esc(o)+'</div>').join("");
+  const total=m.deadline-Date.now();clearInterval(barT);barT=setInterval(()=>{const left=Math.max(0,m.deadline-Date.now());E("#bar").style.width=(100*left/total)+"%";if(left<=0)clearInterval(barT);},200);drawCircle(E("#circle2"),answered);}
+ if(m.t==="answered"){answered.add(m.id);E("#answered").textContent=m.count;drawCircle(E("#circle2"),answered);}
+ if(m.t==="reveal"){clearInterval(barT);E("#bar").style.width="0%";const r=m.results;document.querySelectorAll("#opts .opt").forEach(o=>o.classList.add(+o.dataset.i===r.correct?"ok":"no"));E("#reveal").classList.remove("hide");E("#why").textContent=r.why||"";
+  E("#out").textContent=r.out.length?("Out of the circle: "+r.out.map(o=>o.name+(o.why==="slow"?" (too slow)":o.why==="none"?" (no answer)":"")).join(", ")):"Nobody out this round!";players=m.players;drawCircle(E("#circle2"));E("#alive").textContent=r.alive;
+  if(!paused)autoT=setTimeout(()=>send({t:"next",seconds:secs}),8000);}
+ if(m.t==="state"){if(m.state.phase==="end"){clearTimeout(autoT);E("#game").classList.add("hide");E("#over").classList.remove("hide");const w=m.state.winner;E("#winner").textContent=w?w.name:"—";
+  const st=players.slice().sort((a,b)=>(b.alive-a.alive)||(b.score-a.score));E("#standings").innerHTML="<tr><th>#</th><th>Player</th><th>Score</th><th>Correct</th><th></th></tr>"+st.map((p,i)=>"<tr><td>"+(i+1)+"</td><td>"+esc(p.name)+"</td><td>"+p.score+"</td><td>"+p.correct+"/"+p.answers+"</td><td>"+(i===0?"👑 Crown":i<5?"🍗 Chicken dinner":"")+"</td></tr>").join("");}
+  if(m.state.phase==="paused"){paused=true;E("#pause").textContent="▶ Resume";}}
+}
+E("#start").addEventListener("click",()=>{send({t:"start"});setTimeout(()=>send({t:"next",seconds:secs}),400);});
+E("#next").addEventListener("click",()=>{clearTimeout(autoT);paused=false;E("#pause").textContent="⏸ Pause";send({t:"next",seconds:secs});});
+E("#pause").addEventListener("click",()=>{paused=!paused;E("#pause").textContent=paused?"▶ Resume":"⏸ Pause";if(paused){clearTimeout(autoT);send({t:"pause"});}else send({t:"next",seconds:secs});});
+E("#revive").addEventListener("click",()=>{const ghosts=players.filter(p=>!p.alive).sort((a,b)=>b.correct-a.correct);if(ghosts[0])send({t:"revive",id:ghosts[0].id});});
+E("#end").addEventListener("click",()=>{clearTimeout(autoT);send({t:"end"});});
+E("#again").addEventListener("click",()=>location.reload());
+</script></body></html>

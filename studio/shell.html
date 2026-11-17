@@ -1,0 +1,294 @@
+<title>Game Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Limelight&family=Rum+Raisin&family=Alegreya:ital,wght@0,400;0,700;1,400&family=Alegreya+Sans:wght@400;500;700;800&display=swap">
+<style>
+:root{--e-bg:#f3e8cf;--e-card:#fffaf0;--e-ink:#24170f;--e-muted:#6b5541;--e-line:#d8c39c;--e-accent:#b7432d;--e-accent-ink:#fffaf0;--e-gold:#e0b046;--e-teal:#2f6f69;--e-teal-ink:#f4fbf9;--e-field:#ffffff;--e-warn:#9a3412;--e-ok:#2f6f69;--e-sel:#fde9b8;--e-shadow:rgba(36,23,15,.16);
+ --ink:#211611;--paper:#f3e7c8;--cream:#fbf4e3;--brass:#c89b3c;--red:#b7432d;--teal:#3f7e78;--pink:#e85d8f;--gold:#e4b84a;--shade:#d9c89c;--frame:#17110d;--ok:#3f7e78;--bad:#b7432d}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--e-bg:#1a120c;--e-card:#251a12;--e-ink:#f3e6cc;--e-muted:#c2ab8c;--e-line:#4b3826;--e-accent:#e2694f;--e-accent-ink:#1a120c;--e-gold:#e8bd5a;--e-teal:#5fb3aa;--e-teal-ink:#0f201e;--e-field:#140f0b;--e-warn:#f2a27c;--e-ok:#7cc9bf;--e-sel:#3b2c18;--e-shadow:rgba(0,0,0,.45);color-scheme:dark}}
+:root[data-theme="dark"]{--e-bg:#1a120c;--e-card:#251a12;--e-ink:#f3e6cc;--e-muted:#c2ab8c;--e-line:#4b3826;--e-accent:#e2694f;--e-accent-ink:#1a120c;--e-gold:#e8bd5a;--e-teal:#5fb3aa;--e-teal-ink:#0f201e;--e-field:#140f0b;--e-warn:#f2a27c;--e-ok:#7cc9bf;--e-sel:#3b2c18;--e-shadow:rgba(0,0,0,.45);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--e-bg);color:var(--e-ink);font-family:"Alegreya Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.45;margin:0}
+body.playing{overflow:hidden;background:var(--frame)}
+.e-wrap{max-width:1260px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.e-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:16px}
+.e-top h1{font-family:"Limelight",Georgia,serif;font-weight:400;font-size:clamp(34px,5vw,54px);line-height:1;margin:0;letter-spacing:.5px}
+.e-tag{margin:6px 0 0;color:var(--e-muted);font-size:18px;max-width:62ch}
+.e-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.e-main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:22px;align-items:start}
+@media (max-width:940px){.e-main{grid-template-columns:1fr}}
+.e-card{background:var(--e-card);border:2px solid var(--e-line);border-radius:14px;padding:16px 18px 18px;box-shadow:0 2px 0 var(--e-shadow)}
+.e-card+.e-card{margin-top:18px}
+.e-step{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
+.e-step .n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--e-accent);color:var(--e-accent-ink);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;transform:translateY(4px)}
+.e-step h2{font-size:23px;margin:0;line-height:1.15}
+.e-hint{color:var(--e-muted);font-size:15.5px;margin:-4px 0 12px}
+.e-genres{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.e-genre{font:inherit;color:var(--e-ink);text-align:left;background:var(--e-field);border:2px solid var(--e-line);border-radius:12px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.e-emoji{font-size:30px;line-height:1}.e-genre b{font-size:18px}.e-genre small{color:var(--e-muted);font-size:14px;line-height:1.25}
+.e-genre[aria-pressed="true"]{border-color:var(--e-accent);background:var(--e-sel);box-shadow:0 0 0 2px var(--e-accent) inset}
+.e-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+@media (max-width:640px){.e-grid2{grid-template-columns:1fr}}
+.e-field{margin:0 0 10px}
+.e-lab{display:block;font-weight:700;font-size:15.5px;margin:0 0 4px}
+.e-opt{font-weight:400;color:var(--e-muted)}
+.e-in{font:inherit;font-size:16.5px;color:var(--e-ink);background:var(--e-field);border:2px solid var(--e-line);border-radius:10px;padding:8px 10px;width:100%;min-width:0}
+textarea.e-in{resize:vertical;line-height:1.4}
+.e-in:focus,.e-genre:focus-visible,.e-chip:focus-visible,.e-swb:focus-visible,.e-btn:focus-visible{outline:3px solid var(--e-gold);outline-offset:1px}
+.e-sw{display:flex;flex-wrap:wrap;gap:8px}
+.e-swb{width:34px;height:34px;border-radius:50%;border:3px solid var(--e-line);cursor:pointer;padding:0}
+.e-swb[aria-pressed="true"]{border-color:var(--e-ink);box-shadow:0 0 0 3px var(--e-gold)}
+.e-chips{display:flex;flex-wrap:wrap;gap:8px}
+.e-chip{font:inherit;font-size:15.5px;font-weight:700;color:var(--e-ink);background:var(--e-field);border:2px solid var(--e-line);border-radius:999px;padding:6px 14px;cursor:pointer}
+.e-chip[aria-pressed="true"]{background:var(--e-teal);color:var(--e-teal-ink);border-color:var(--e-teal)}
+.e-q{border:2px dashed var(--e-line);border-radius:12px;padding:12px;margin-top:12px}
+.e-qhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.e-qhead b{font-size:18px}.e-qtype{width:auto;min-width:200px}
+.e-abc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+@media (max-width:640px){.e-abc{grid-template-columns:1fr}}
+.e-q .e-grid2{margin-top:8px}
+.e-btn{font:inherit;font-weight:700;font-size:16px;border-radius:10px;border:2px solid var(--e-ink);background:var(--e-card);color:var(--e-ink);padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:42px}
+.e-btn.e-primary{background:var(--e-accent);color:var(--e-accent-ink);border-color:var(--e-accent)}
+.e-btn.e-teal{background:var(--e-teal);color:var(--e-teal-ink);border-color:var(--e-teal)}
+.e-btn.e-small{min-height:34px;padding:4px 10px;font-size:14.5px}
+.e-btn.e-big{font-size:20px;min-height:52px;padding:10px 20px}
+.e-btn:active{transform:translateY(1px)}
+.e-side{position:sticky;top:12px}
+@media (max-width:940px){.e-side{position:static}}
+#pv{width:100%;aspect-ratio:16/9;max-width:100%;display:block;border-radius:10px;border:3px solid var(--e-ink);background:#f3e7c8}
+.e-status{margin:10px 0 0;padding:0;list-style:none;font-size:15.5px}
+.e-status li{padding:3px 0 3px 26px;position:relative}
+.e-status li::before{position:absolute;left:0;top:3px;font-weight:800}
+.e-status li.ok{color:var(--e-ok)}.e-status li.ok::before{content:"✓"}
+.e-status li.todo{color:var(--e-warn)}.e-status li.todo::before{content:"!"}
+.e-msg{font-weight:700;color:var(--e-ok);min-height:1.4em;margin:8px 0 0}
+.e-err{color:var(--e-warn);font-weight:700;min-height:1.2em}
+#emodal{position:fixed;inset:0;background:rgba(20,12,6,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+#emodal[hidden]{display:none!important}
+.e-mbox{background:var(--e-card);color:var(--e-ink);border:2px solid var(--e-line);border-radius:14px;padding:18px;max-width:640px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.e-mbox h2{margin:0 0 6px}
+details.e-teacher{margin-top:22px}
+details.e-teacher summary{cursor:pointer;font-weight:800;font-size:19px}
+.e-kbd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;background:var(--e-sel);padding:1px 6px;border-radius:6px}
+.e-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;border-bottom:2px solid var(--e-line);padding-bottom:10px}
+.e-tab{font-weight:800;font-size:17px;color:var(--e-ink);text-decoration:none;border:2px solid var(--e-line);background:var(--e-card);border-radius:999px;padding:8px 16px;display:inline-flex;gap:8px;align-items:center;min-height:44px}
+.e-tab[aria-current="page"]{background:var(--e-ink);color:var(--e-bg);border-color:var(--e-ink)}
+.e-tab:focus-visible{outline:3px solid var(--e-gold);outline-offset:2px}
+.e-cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px;align-items:start}
+.e-cards3 .e-card+.e-card{margin-top:0}
+.e-feature h2{font-size:24px;margin:0 0 6px}
+.e-feature .big{font-size:44px;line-height:1}
+.e-list{list-style:none;margin:8px 0 0;padding:0}
+.e-list li{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--e-line);padding:8px 0;flex-wrap:wrap}
+.e-list li b{font-size:16.5px}.e-list small{color:var(--e-muted);display:block}
+.e-skillgrp{margin:0 0 12px}
+.e-skillgrp h3{font-size:16px;margin:0 0 6px;color:var(--e-muted);text-transform:uppercase;letter-spacing:.6px}
+.e-tick{font:inherit;font-size:15.5px;font-weight:700;color:var(--e-ink);background:var(--e-field);border:2px solid var(--e-line);border-radius:12px;padding:7px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-align:left}
+.e-tick::before{content:"";width:18px;height:18px;border:2px solid var(--e-ink);border-radius:5px;flex:none;background:var(--e-field)}
+.e-tick[aria-pressed="true"]{border-color:var(--e-teal);background:var(--e-sel)}
+.e-tick[aria-pressed="true"]::before{background:var(--e-teal);border-color:var(--e-teal);box-shadow:inset 0 0 0 3px var(--e-field)}
+.e-tick small{font-weight:400;color:var(--e-muted)}
+.e-ai{border:2px solid var(--e-line);border-radius:12px;padding:10px 12px;margin:0 0 16px;display:flex;gap:10px;align-items:flex-start;background:var(--e-card)}
+.e-ai .dot{width:12px;height:12px;border-radius:50%;background:var(--e-muted);flex:none;margin-top:6px}
+.e-ai.ok .dot{background:var(--e-ok)}.e-ai.no .dot{background:var(--e-warn)}
+.e-prog{font-size:15.5px;color:var(--e-muted);min-height:1.4em;margin:10px 0 0}
+.e-out{margin-top:12px}
+.e-out h3{margin:0 0 4px;font-size:20px}
+.e-qlist{margin:6px 0 0;padding-left:22px;font-size:15.5px}
+.e-qlist li{margin:4px 0}
+.e-qlist .a{color:var(--e-ok);font-weight:700}
+.e-coach{margin-top:8px;border-left:4px solid var(--e-gold);padding:6px 10px;background:var(--e-sel);border-radius:0 8px 8px 0;font-size:15.5px}
+.e-coach.ok{border-left-color:var(--e-ok)}
+.e-wcheck{list-style:none;margin:8px 0 0;padding:0;font-size:15.5px}
+.e-wcheck li{padding:2px 0 2px 24px;position:relative}
+.e-wcheck li::before{position:absolute;left:0;font-weight:800}
+.e-wcheck li.ok{color:var(--e-ok)}.e-wcheck li.ok::before{content:"✓"}
+.e-wcheck li.todo{color:var(--e-warn)}.e-wcheck li.todo::before{content:"·"}
+.e-frame{background:var(--e-sel);border-radius:10px;padding:10px 12px;margin-top:8px;line-height:1.6;font-size:16px}
+.e-blank{display:inline-block;min-width:54px;border-bottom:2px solid var(--e-muted);transform:translateY(-3px)}
+.plan{width:100%;border-collapse:collapse;margin-top:10px;font-size:16px}
+.plan td{border-top:1px solid var(--e-line);padding:7px 8px;vertical-align:top}
+.plan td:first-child{white-space:nowrap;font-weight:700;color:var(--e-accent);width:1%}
+.tblwrap{overflow-x:auto}
+details.e-more summary{cursor:pointer;font-weight:700;color:var(--e-teal);margin-top:8px}
+#brewwrap{position:fixed;inset:0;z-index:40;background:#17110d}
+#brewwrap[hidden]{display:none!important}
+#brewframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+#brewclose{position:absolute;z-index:2;top:max(6px,env(safe-area-inset-top,0px));right:max(8px,env(safe-area-inset-right,0px));font:700 14px "Alegreya Sans",system-ui,sans-serif;color:#fbf4e3;background:rgba(23,17,13,.75);border:2px solid #fbf4e3;border-radius:999px;padding:6px 12px;cursor:pointer}
+.e-tabpane[hidden]{display:none!important}
+/* ---- the game stage (single theme by design) ---- */
+#playwrap{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:var(--frame);padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
+#playwrap[hidden]{display:none!important}
+#stage{position:relative;width:640px;height:360px;flex:none;background:var(--paper);color:var(--ink);font-family:"Alegreya",Georgia,serif;box-shadow:0 0 0 6px #2a1d14,0 0 60px rgba(0,0,0,.8);overflow:hidden;border-radius:6px;-webkit-user-select:none;user-select:none;touch-action:none}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#stage #pausebtn{position:absolute;left:4px;right:auto;top:auto;bottom:2px;pointer-events:auto;background:transparent;border:0;font-family:"Rum Raisin",cursive;font-size:13px;color:var(--ink);opacity:.75;padding:4px 6px}
+#stage .howto{margin:4px 0 0;padding-left:18px;font-size:15px;line-height:1.35}#stage .howto li{margin:3px 0}
+#stage .q .gap{display:inline-block;min-width:60px;border-bottom:3px solid var(--ink)}
+/*GAMECSS*/
+</style>
+
+<div class="e-wrap" id="editor">
+ <header class="e-top">
+  <div><h1>Game Studio</h1><p class="e-tag">Play the class games, make your own English game, or let Claude make a practice exam for the skills you need to improve.</p></div>
+ </header>
+ <nav class="e-tabs" aria-label="Sections">
+  <a class="e-tab" href="#play" data-tab="play"><span aria-hidden="true">🎮</span>Play</a>
+  <a class="e-tab" href="#make" data-tab="make"><span aria-hidden="true">🛠️</span>Make a game</a>
+  <a class="e-tab" href="#exam" data-tab="exam"><span aria-hidden="true">✨</span>Practice exam</a>
+  <a class="e-tab" href="#teacher" data-tab="teacher">For the teacher</a>
+ </nav>
+
+ <section class="e-tabpane" id="tab-play" aria-label="Play" hidden>
+  <div class="e-cards3">
+   <article class="e-card e-feature"><div class="big" aria-hidden="true">☕</div><h2>Brew-Haha!</h2><p class="e-hint" style="margin:0 0 12px">The class boss game: three exams like the final — Section 1 (headings, True / False / Not Given, word box), Section 2 (A, B or C, one word, table) and the passive.</p><button class="e-btn e-primary e-big" type="button" id="pbrew">▶ Play Brew-Haha</button><p class="e-err" id="pbrewmsg" aria-live="polite"></p></article>
+   <article class="e-card e-feature"><div class="big" aria-hidden="true">🤝</div><h2>A friend's game</h2><p class="e-hint" style="margin:0 0 8px">Paste the game code your friend or teacher sent you (it starts with GAME-).</p><textarea class="e-in" id="pcode" rows="3" placeholder="GAME-..." aria-label="Game code"></textarea><p class="e-err" id="pcerr"></p><button class="e-btn e-teal" type="button" id="pcplay">▶ Play it</button></article>
+   <article class="e-card e-feature"><div class="big" aria-hidden="true">📝</div><h2>My practice exams</h2><p class="e-hint" style="margin:0">Exams Claude made for you on this computer.</p><ul class="e-list" id="pmine"></ul></article>
+   <article class="e-card e-feature"><div class="big" aria-hidden="true">🕹️</div><h2>Example games</h2><p class="e-hint" style="margin:0 0 8px">Try a ready-made game in every style.</p><div class="e-row" id="pex"></div></article>
+  </div>
+ </section>
+
+ <section class="e-tabpane" id="tab-make" aria-label="Make a game">
+  <div class="e-row" style="margin:0 0 14px"><button class="e-btn e-small" type="button" id="eimport">Import from the Game Design Lab</button><button class="e-btn e-small" type="button" id="edemo">See an example</button><button class="e-btn e-small" type="button" id="eclear">Start again</button></div>
+  <div class="e-main">
+   <div>
+    <section class="e-card" aria-labelledby="es1"><div class="e-step"><span class="n">1</span><h2 id="es1">Choose your genre</h2></div><div class="e-genres" id="egenres"></div>
+     <div id="eownbox" hidden style="margin-top:12px"><label class="e-lab" for="eidea">Describe your kind of game</label><input class="e-in" type="text" id="eidea" data-k="idea" maxlength="200" placeholder="Example: a maze where a cat finds the way home"><p class="e-hint" style="margin:6px 0 0">The Studio can't play this kind of game itself. Write everything here, then copy the plan for Claude in step 5.</p></div></section>
+    <section class="e-card" aria-labelledby="es2"><div class="e-step"><span class="n">2</span><h2 id="es2">Name it and design the look</h2></div>
+     <div class="e-grid2"><div class="e-field"><label class="e-lab" for="ename">Game name</label><input class="e-in" type="text" id="ename" data-k="name" maxlength="40" placeholder="Example: Desert Dash"></div><div class="e-field"><label class="e-lab" for="eteam">Made by <span class="e-opt">(first names)</span></label><input class="e-in" type="text" id="eteam" data-k="team" maxlength="60" placeholder="Example: Salim and Huda"></div></div>
+     <div id="eopts"></div></section>
+    <section class="e-card" aria-labelledby="es3"><div class="e-step"><span class="n">3</span><h2 id="es3">Write the story</h2></div><p class="e-hint">Short, clear English. The enemy says these lines during the game.</p>
+     <div class="e-grid2"><div class="e-field"><label class="e-lab" for="ehero">Your hero's name</label><input class="e-in" type="text" id="ehero" data-k="hero" maxlength="40"></div><div class="e-field"><label class="e-lab" for="eenemy">The enemy's name</label><input class="e-in" type="text" id="eenemy" data-k="enemy" maxlength="40"></div>
+      <div class="e-field"><label class="e-lab" for="esetting">The place</label><input class="e-in" type="text" id="esetting" data-k="setting" maxlength="120" placeholder="Example: a sand track near Salalah"></div><div class="e-field"><label class="e-lab" for="ewin">How do you win?</label><input class="e-in" type="text" id="ewin" data-k="win" maxlength="120" placeholder="Example: finish before the rival"></div></div>
+     <div class="e-field"><label class="e-lab" for="et0">The enemy says… (3 lines)</label><input class="e-in" type="text" id="et0" data-taunt="0" maxlength="70"><input class="e-in" type="text" data-taunt="1" maxlength="70" style="margin-top:6px" aria-label="Enemy line 2"><input class="e-in" type="text" data-taunt="2" maxlength="70" style="margin-top:6px" aria-label="Enemy line 3"></div>
+     <div class="e-grid2"><div class="e-field"><label class="e-lab" for="eright">Right answer: what happens?</label><input class="e-in" type="text" id="eright" data-k="right" maxlength="70"></div><div class="e-field"><label class="e-lab" for="ewrong">Wrong answer: what happens?</label><input class="e-in" type="text" id="ewrong" data-k="wrong" maxlength="70"></div></div></section>
+    <section class="e-card" aria-labelledby="es4"><div class="e-step"><span class="n">4</span><h2 id="es4">Write your questions</h2></div><p class="e-hint">At least 5, in the exam types. The game shows your text beside every question.</p>
+     <div class="e-row" style="justify-content:space-between;margin-bottom:4px"><label class="e-lab" for="etext" style="margin:0">Your reading text <span class="e-opt">(needed for True / False / Not Given)</span></label><button class="e-btn e-small" type="button" id="epdf">📄 Take the text from a PDF</button></div>
+     <input type="file" id="epdffile" accept="application/pdf,.pdf" hidden>
+     <p class="e-hint" id="epdfmsg" style="margin:0 0 6px" aria-live="polite"></p>
+     <textarea class="e-in" id="etext" data-k="text" rows="4" maxlength="6000" placeholder="Type or paste a short text (40–150 words). Your questions must be about it."></textarea>
+     <div id="eqs"></div><div class="e-row" style="margin-top:12px"><button class="e-btn" type="button" id="eaddq">+ Add a question</button><span class="e-hint" style="margin:0" id="eqcount"></span></div>
+     <div class="e-row" style="margin-top:12px"><button class="e-btn e-teal" type="button" id="ecoach">✨ Check our questions with Claude</button><span class="e-hint" style="margin:0" id="ecoachmsg" aria-live="polite"></span></div></section>
+    <section class="e-card" aria-labelledby="es6"><div class="e-step"><span class="n">6</span><h2 id="es6">Write: How to play our game</h2></div><p class="e-hint">At least 80 words, 5 sequence markers and 4 passive sentences (is / are + third form). Use the frame if it helps.</p>
+     <div class="e-frame"><b>First,</b> the game is opened and the PLAY button is clicked. <b>Then</b> the hero is moved with <span class="e-blank"></span>. <b>After that,</b> <span class="e-blank"></span>. <b>When</b> a question appears, the game is stopped and an answer is chosen. <b>If</b> the answer is right, <span class="e-blank"></span>. <b>Finally,</b> <span class="e-blank"></span>.</div>
+     <textarea class="e-in" id="ehowto" data-k="howto" rows="6" maxlength="2400" style="margin-top:10px" aria-label="How to play our game" placeholder="How to play ..."></textarea>
+     <ul class="e-wcheck" id="ehowcheck"></ul>
+     <details class="e-more"><summary>Test it and ask for changes, then play another team's game</summary>
+      <p class="e-hint" style="margin:8px 0 4px">Ask in English, one change at a time:</p>
+      <ul><li>Please make the <span class="e-blank"></span> bigger / smaller / faster / slower.</li><li>When I press <span class="e-blank"></span>, nothing happens. Please fix it.</li><li>The answer to question <span class="e-blank"></span> should be <span class="e-blank"></span>. Please correct it.</li></ul>
+      <p class="e-hint" style="margin:8px 0 4px">After you play another team's game, tell them:</p>
+      <ul><li>I liked <span class="e-blank"></span> because <span class="e-blank"></span>.</li><li>The questions were easy / hard / just right because <span class="e-blank"></span>.</li><li>One problem was <span class="e-blank"></span>. You could <span class="e-blank"></span>.</li></ul></details></section>
+   </div>
+   <aside class="e-side"><section class="e-card" aria-labelledby="es5"><div class="e-step"><span class="n">5</span><h2 id="es5">Play it and share it</h2></div>
+    <canvas id="pv" width="640" height="360" aria-label="Preview of your game"></canvas>
+    <div class="e-row" style="margin-top:12px" id="eplayrow"><button class="e-btn e-primary e-big" type="button" id="eplay">▶ Play my game</button><button class="e-btn e-teal" type="button" id="ecode">Copy game code</button></div>
+    <div class="e-row" style="margin-top:12px" id="eownrow" hidden><button class="e-btn e-primary e-big" type="button" id="eplan">Copy the plan for Claude</button><a class="e-btn" href="https://claude.ai/new" target="_blank" rel="noopener noreferrer">Open Claude ↗</a></div>
+    <p class="e-msg" id="emsg" aria-live="polite"></p><ul class="e-status" id="echecks"></ul>
+    <p class="e-hint" style="margin-top:10px" id="esharehint">Send the game code to your teacher and friends on WhatsApp. They open this Studio, choose Play → “A friend's game” and paste it. Your work is saved on this computer while you type.</p></section></aside>
+  </div>
+ </section>
+
+ <section class="e-tabpane" id="tab-exam" aria-label="Practice exam" hidden>
+  <div class="e-ai" id="xai" aria-live="polite"><span class="dot" aria-hidden="true"></span><div id="xaitxt">Checking whether Claude can be used here…</div></div>
+  <div class="e-main">
+   <div>
+    <section class="e-card" aria-labelledby="xs1"><div class="e-step"><span class="n">1</span><h2 id="xs1">Which skills do you need to improve?</h2></div><p class="e-hint">Tick 1 to 5 skills. Claude makes an exam that practises them, in the final-exam style.</p>
+     <div id="xskills"></div><div class="e-row"><button class="e-btn e-small" type="button" id="xweak">Tick my weakest skills</button><span class="e-hint" style="margin:0" id="xskn"></span></div></section>
+    <section class="e-card" aria-labelledby="xs2"><div class="e-step"><span class="n">2</span><h2 id="xs2">Choose the text</h2></div>
+     <div class="e-chips" role="group" aria-label="Where the text comes from" id="xsrc"><button type="button" class="e-chip" data-src="topic" aria-pressed="true">Claude writes a new text</button><button type="button" class="e-chip" data-src="file" aria-pressed="false">Upload a PDF or a photo</button><button type="button" class="e-chip" data-src="paste" aria-pressed="false">Paste a text</button></div>
+     <div id="xsrc-topic" style="margin-top:12px"><label class="e-lab" for="xtopic">Topic</label><input class="e-in" type="text" id="xtopic" maxlength="120" placeholder="Example: how Omani halwa is made"><div class="e-chips" style="margin-top:8px" id="xtopics"></div></div>
+     <div id="xsrc-file" style="margin-top:12px" hidden><p class="e-hint" style="margin:0 0 8px">A PDF from your course, or a clear photo of a page. Claude uses the text in it.</p><input type="file" id="xfile" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" multiple class="e-in"><p class="e-hint" id="xfilemsg" style="margin:6px 0 0" aria-live="polite"></p>
+      <div id="xpagesbox" hidden style="margin-top:8px"><label class="e-lab" for="xpages">Pages to use <span class="e-opt">(up to 6)</span></label><input class="e-in" type="text" id="xpages" style="max-width:180px" placeholder="1-2"></div>
+      <label class="e-lab" for="xfiletext" style="margin-top:8px">The text Claude will use <span class="e-opt">(you can edit it)</span></label><textarea class="e-in" id="xfiletext" rows="5" placeholder="The text from your PDF appears here."></textarea></div>
+     <div id="xsrc-paste" style="margin-top:12px" hidden><label class="e-lab" for="xpaste">Paste your text</label><textarea class="e-in" id="xpaste" rows="6" placeholder="Paste an English text (150–600 words)."></textarea></div></section>
+    <section class="e-card" aria-labelledby="xs3"><div class="e-step"><span class="n">3</span><h2 id="xs3">How long, and which game?</h2></div>
+     <div class="e-field"><span class="e-lab">Length</span><div class="e-chips" id="xlen"><button type="button" class="e-chip" data-len="8" aria-pressed="false">Quick · 8 questions</button><button type="button" class="e-chip" data-len="15" aria-pressed="true">Practice · 15 questions</button><button type="button" class="e-chip" data-len="25" aria-pressed="false">Full reading paper · 25</button></div><p class="e-hint" id="xlenhint" style="margin:6px 0 0"></p></div>
+     <div class="e-field"><span class="e-lab">Play it as</span><div class="e-chips" id="xgenre"></div></div></section>
+   </div>
+   <aside class="e-side"><section class="e-card" aria-labelledby="xs4"><div class="e-step"><span class="n">4</span><h2 id="xs4">Make my exam</h2></div>
+    <div class="e-row"><button class="e-btn e-primary e-big" type="button" id="xmake">✨ Make my exam</button><button class="e-btn" type="button" id="xstop" hidden>Stop</button></div>
+    <p class="e-prog" id="xprog" aria-live="polite"></p>
+    <div class="e-out" id="xout"></div>
+    <p class="e-hint" style="margin-top:10px">Claude can make mistakes. If an answer looks wrong, report it to your teacher.</p></section></aside>
+  </div>
+ </section>
+
+ <section class="e-tabpane" id="tab-teacher" aria-label="For the teacher" hidden>
+  <div class="e-cards3">
+   <article class="e-card" id="thookcard" hidden><h2 style="margin:0 0 6px">Class file through your n8n</h2>
+    <p class="e-hint" style="margin:0 0 8px">For networks that block Claude, such as the university network. Students' devices only talk to your n8n, and n8n talks to Claude. Your API key stays inside n8n, not in the file. About 10 minutes, once.</p>
+    <ol style="margin:0 0 12px;padding-left:22px;line-height:1.5">
+     <li>In n8n, create a new workflow and use <b>Import from File</b> to open <span class="e-kbd">GE2-Claude-n8n-workflow.json</span>.</li>
+     <li>Open the step <b>Ask Claude</b>. Under Credential, create a new <b>Header Auth</b> credential: Name <span class="e-kbd">x-api-key</span>, Value: your API key. Save it.</li>
+     <li>Save the workflow and publish it (turn it on). Open the first step, <b>Class file asks</b>, and copy its <b>Production URL</b>.</li>
+     <li>Paste the address below, press <b>Test the address</b>, then <b>Download the class file</b>. Send that file to your students.</li></ol>
+    <div class="e-field"><label class="e-lab" for="thook">Your n8n address (Production URL)</label><input class="e-in" id="thook" type="url" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="https://…/webhook/…"></div>
+    <div class="e-field"><label class="e-lab" for="thookday">Claude requests per student device per day</label><select class="e-in" id="thookday" style="max-width:220px"><option value="5">5 a day</option><option value="10" selected>10 a day</option><option value="20">20 a day</option></select></div>
+    <div class="e-row"><button class="e-btn e-teal" type="button" id="thooktest">Test the address</button><button class="e-btn e-primary" type="button" id="thookdl">Download the class file</button></div>
+    <p class="e-hint" id="thookmsg" aria-live="polite" style="margin:10px 0 0;font-weight:700"></p>
+    <ul class="e-hint" style="margin:12px 0 0;padding-left:20px;line-height:1.45">
+     <li>The workflow also stops at about 300 Claude requests a day for the whole class. You can change that number at the top of its step <b>Check the request</b>.</li>
+     <li>Each exam is one n8n execution. Full 25-question papers take about a minute.</li></ul></article>
+   <article class="e-card" id="tkeycard" hidden><h2 style="margin:0 0 6px">Your class file (your API key inside)</h2>
+    <p class="e-hint" style="margin:0 0 8px">Students open the class file and make practice exams on your API credits: no Claude account and no class code. About 2 minutes.</p>
+    <ol style="margin:0 0 12px;padding-left:22px;line-height:1.5">
+     <li>At platform.claude.com open <b>API keys</b> → <b>Create key</b>. Choose an expiry that lasts until the end of the term, then press <b>Copy key</b>.</li>
+     <li>Paste it below and press <b>Test the key</b>.</li>
+     <li>Choose a daily limit and press <b>Download the class file</b>. Open that file, make one quick exam, then send the file to your students.</li></ol>
+    <div class="e-field"><label class="e-lab" for="tkey">Your API key</label><div class="e-row"><input class="e-in" id="tkey" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="sk-ant-…" style="flex:1 1 220px;width:auto"><button class="e-btn" type="button" id="tkeyshow" aria-pressed="false">Show</button></div></div>
+    <div class="e-field"><label class="e-lab" for="tkeyday">Claude requests per student device per day</label><select class="e-in" id="tkeyday" style="max-width:220px"><option value="5">5 a day</option><option value="10" selected>10 a day</option><option value="20">20 a day</option></select></div>
+    <div class="e-row"><button class="e-btn e-teal" type="button" id="tkeytest">Test the key</button><button class="e-btn e-primary" type="button" id="tkeydl">Download the class file</button></div>
+    <p class="e-hint" id="tkeymsg" aria-live="polite" style="margin:10px 0 0;font-weight:700"></p>
+    <ul class="e-hint" style="margin:12px 0 0;padding-left:20px;line-height:1.45">
+     <li>Anyone who has the class file can find the key inside it, and whatever is done with the key counts as you. Send the file only to your class; never post it online.</li>
+     <li>If the file reaches the wrong people, delete the key at platform.claude.com → API keys. Every copy stops working at once; then make a new key and a new class file.</li>
+     <li>Spending stops at your monthly API credits. Each exam costs roughly 5–15 US cents.</li></ul></article>
+   <article class="e-card"><h2 style="margin:0 0 6px">How it works</h2>
+    <p><b>Play</b> and <b>Make a game</b> need no accounts: the games run inside this page. A team copies its game code and sends it to you; press Play → “A friend's game” and paste it. The result card shows the questions right, an English grade and a proof code.</p>
+    <p><b>Practice exam</b> and <b>Check our questions</b> ask Claude. Here on claude.ai each student uses their own Claude account (they must be signed in, and it uses their own allowance). The class file (made from the teacher file) and the class copy on Cloudflare run on your API credits instead, so students need no account.</p>
+    <p>Practice exams follow the final-exam reading order: headings, True / False / Not Given, word box, A / B / C, one word or a number, table — plus listening (read aloud by the computer), grammar and vocabulary items for the skills students tick. Every reading answer is checked against the text before the game starts; questions that fail the check are removed.</p></article>
+   <article class="e-card"><h2 style="margin:0 0 6px">A 90-minute lab lesson</h2><div class="tblwrap"><table class="plan">
+    <tr><td>5 min</td><td>Teams of 2–3, one computer each. Open Make a game.</td></tr>
+    <tr><td>15 min</td><td>Steps 1–3: genre, look and the story in English.</td></tr>
+    <tr><td>20 min</td><td>Step 4: the text and at least 5 questions; “Check our questions with Claude” gives hints, not answers. Check every team before they play.</td></tr>
+    <tr><td>15 min</td><td>Step 5: play, fix, copy the game code and send it to you.</td></tr>
+    <tr><td>10 min</td><td>Teams swap computers and play each other's games; feedback with the frames.</td></tr>
+    <tr><td>15 min</td><td>Step 6: “How to play our game” — a short process text with the passive (writing LO4).</td></tr>
+    <tr><td>10 min</td><td>Practice exam: each student ticks their weakest skills and plays one short exam.</td></tr></table></div></article>
+   <article class="e-card"><h2 style="margin:0 0 6px">Help</h2>
+    <p><b>Controls.</b> Race: Space jumps. Penalty: Space or click shoots. Space shooter: arrow keys. Café: click the stations or press 1–4. Sweet match: drag sweets, or arrows + Space. Boss fight: arrows, Space, X, C. On phones, buttons appear on the screen.</p>
+    <p><b>Saving.</b> Work is saved on each computer while students type. “Start again” clears it for the next class.</p>
+    <p><b>Our own idea.</b> For a game the Studio can't play (a maze, a quiz show…), the team writes the plan here and pastes it into Claude, which builds the game.</p></article>
+   <article class="e-card"><h2 style="margin:0 0 6px">The class copy on your API credits</h2><p class="e-hint" style="margin:0 0 8px">For students without a Claude account. About 30 minutes, once. You need the file <span class="e-kbd">worker.js</span> from Claude.</p>
+    <ol style="margin:0;padding-left:22px;line-height:1.5">
+     <li>In claude.ai open Settings → Billing → <b>API credits</b> and link a Console organization (your plan must be at least 7 days old). The credits arrive every month and expire at the end of the month.</li>
+     <li>At platform.claude.com open <b>API keys</b> → Create key, and copy it. Paste it only into Cloudflare (step 5), never into a chat. Under Limits, keep auto-reload off so nothing is charged beyond the credits.</li>
+     <li>Make a free account at dash.cloudflare.com. Open <b>Workers &amp; Pages</b> → Create → start with “Hello World”, name it (for example <span class="e-kbd">ge2-games</span>) and Deploy.</li>
+     <li>Edit code → delete everything → paste all of <span class="e-kbd">worker.js</span> → Deploy.</li>
+     <li>Settings → <b>Variables and Secrets</b> → Add, type <b>Secret</b>: <span class="e-kbd">ANTHROPIC_API_KEY</span> = your key. Add a second Secret: <span class="e-kbd">CLASS_CODE</span> = a word for your class. Deploy.</li>
+     <li>Open your new link (…workers.dev). The Practice exam tab says “Class copy”: type the class code and make one test exam.</li>
+     <li>Give students the link and the code. Change the code each term. Each exam uses roughly 10–15 US cents of credits.</li></ol></article>
+  </div>
+ </section>
+</div>
+<div id="emodal" hidden><div class="e-mbox" role="dialog" aria-modal="true"></div></div>
+<div id="brewwrap" hidden><iframe id="brewframe" title="Brew-Haha" allow="fullscreen; autoplay"></iframe><button id="brewclose" type="button">← Back to the Studio</button></div>
+<div id="playwrap" hidden><div id="stage"><canvas id="gl" width="640" height="360"></canvas><div class="hud" id="hud" hidden><button id="pausebtn" type="button">II pause</button></div><div id="panel" class="ui" hidden></div></div></div>
+<script>
+/*ART*/
+</script>
+<script>
+/*CORE*/
+</script>
+<script>
+/*MODS*/
+</script>
+<script>
+/*EDITOR*/
+</script>
+<script>
+/*EXAM*/
+</script>
+<script>
+/*BREW*/
+</script>

@@ -1,0 +1,25 @@
+# Whitelist: only the GE2 Caravan source goes to GitHub.
+/*
+!/.gitignore
+!/README.md
+!/caravan/
+!/studio/
+
+# never: secrets, student data, raw uploads, generated bundles, n8n exports (they embed credentials)
+caravan/secrets/
+caravan/assets/
+caravan/roster.js
+caravan/roster_rows.json
+caravan/files/worker.mjs
+caravan/gallery/worker.mjs
+caravan/rally/worker.mjs
+caravan/server/*.json
+caravan/server/*_live*.js
+caravan/supa/import/
+studio/n8n/
+studio/n8n2/
+studio/n8n3/
+studio/worker/
+studio/*.bak*.html
+**/__pycache__/
+**/*.pyc

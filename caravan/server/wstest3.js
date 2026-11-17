@@ -1,0 +1,13 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch({proxy:{server:process.env.HTTPS_PROXY}});const ctx=await b.newContext({ignoreHTTPSErrors:true});const p=await ctx.newPage();
+await p.goto('https://ge2-caravan-server.ge2-caravan.workers.dev/ping');
+const out=await p.evaluate(async()=>{const BASE=location.origin;const L=[];const log=(...a)=>L.push((Date.now()%100000)+' '+a.join(' '));
+const r=await (await fetch(BASE+"/rooms",{method:"POST",body:JSON.stringify({game:"royale",hostToken:"testhost12345"})})).json();log("room",r.code);
+const open=(url)=>new Promise((res,rej)=>{const ws=new WebSocket(url);ws.onopen=()=>res(ws);ws.onerror=e=>rej("ws error");});
+const tap=(who,ws)=>{ws.onmessage=e=>{const m=JSON.parse(e.data);if(["players","pong","answered","got","hello"].includes(m.t))return;log(who,"<-",m.t,m.t==="reveal"?JSON.stringify(m.results.out.map(o=>o.name+":"+o.why)):"");};};
+const host=await open(r.ws+"?role=host&token=testhost12345");tap("host",host);
+const p1=await open(r.ws+"?role=player&id=A1&name=A");tap("p1",p1);const p2=await open(r.ws+"?role=player&id=B2&name=B");tap("p2",p2);
+const send=(ws,m)=>ws.send(JSON.stringify(m));const wait=ms=>new Promise(r=>setTimeout(r,ms));await wait(500);
+send(host,{t:"load",questions:[{type:"abc",q:"Q1",o:["a","b","c"],a:0},{type:"abc",q:"Q2",o:["a","b","c"],a:0}]});await wait(200);send(host,{t:"start"});await wait(200);send(host,{t:"next",seconds:6});await wait(500);
+send(p1,{t:"answer",v:0});log("p1 answered, waiting for alarm…");await wait(9000);
+const info=await (await fetch(BASE+"/rooms/"+r.code)).json();log("info phase",info.phase);host.close();p1.close();p2.close();return L;});
+console.log(out.join('\n'));await b.close();})();
