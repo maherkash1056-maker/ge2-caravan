@@ -5,7 +5,16 @@ cd /home/claude/caravan
 python3 - <<'PY'
 import json
 slots={1:"/mnt/user-data/outputs/GE2-Game-Studio-CLASS-n8n.html",2:"/mnt/user-data/outputs/Class-Game-2-Two-Windows-Ajnan.html",3:"/mnt/user-data/outputs/Class-Game-3-2-Legends-Wijdan-Khlood.html",4:"/mnt/user-data/outputs/Slot-4-Word-Royale-HOST.html",5:"/mnt/user-data/outputs/Slot-5-Word-Royale-PLAYER.html",6:"/mnt/user-data/outputs/Slot-6-Wadi-Snakes-PLAYER.html",7:"/mnt/user-data/outputs/Slot-7-Wadi-Snakes-HOST.html",8:"/mnt/user-data/outputs/Slot-8-Fort-of-Taqah.html",9:"/mnt/user-data/outputs/Slot-9-Khareef-Rally.html",10:"/mnt/user-data/outputs/Slot-10-Dhow-to-Zanzibar.html",11:"/mnt/user-data/outputs/Slot-11-Brew-Haha.html"}
-d={str(k):open(v,encoding='utf-8').read() for k,v in slots.items()}
+BUG=open('/home/claude/caravan/bugcatch.js',encoding='utf-8').read().strip()
+def inject(h):
+    if 'CARAVAN_BUGCATCH' in h: return h
+    i=h.find('<head'); j=h.find('>',i)+1 if i>=0 else -1
+    return (h[:j]+'\n'+BUG+'\n'+h[j:]) if j>0 else BUG+'\n'+h
+d={}
+for k,v in slots.items():
+    h=open(v,encoding='utf-8').read(); h2=inject(h)
+    if h2!=h: open(v,'w',encoding='utf-8').write(h2)
+    d[str(k)]=h2
 js="const F="+json.dumps(d,ensure_ascii=False)+""";
 export default{async fetch(req){const u=new URL(req.url);const m=u.pathname.match(/^\\/slot\\/(\\d+)$/);if(!m||!F[m[1]])return new Response(JSON.stringify({ok:true,slots:Object.keys(F).map(k=>({part:+k,len:F[k].length}))}),{headers:{"content-type":"application/json"}});
 return new Response(F[m[1]],{headers:{"content-type":"text/html;charset=utf-8","cache-control":"no-store"}});}}"""

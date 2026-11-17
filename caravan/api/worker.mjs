@@ -4,6 +4,6 @@ const H={"access-control-allow-origin":"*","access-control-allow-headers":"*","a
 export default{async fetch(req){
  if(req.method==="OPTIONS")return new Response(null,{headers:H});
  if(req.method!=="POST")return new Response(JSON.stringify({ok:true,server:"ge2-caravan-api"}),{headers:{...H,"content-type":"application/json"}});
- const r=await fetch(UP,{method:"POST",headers:{"content-type":"application/json"},body:await req.text()});
+ const r=await fetch(UP,{method:"POST",headers:{"content-type":"application/json","user-agent":req.headers.get("user-agent")||"","x-forwarded-for":req.headers.get("cf-connecting-ip")||""},body:await req.text()});
  return new Response(await r.text(),{status:r.status,headers:{...H,"content-type":"application/json"}});
 }}

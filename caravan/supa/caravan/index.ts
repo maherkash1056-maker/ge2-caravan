@@ -65,6 +65,15 @@ async function embedRow(id: number, kind: string, j: any, title: string) {
   const et = embedTextOf(kind, j, title); if (!et.trim()) return; const v = await embed(et); if (!v) return;
   await sb.from("exams").update({ embedding: JSON.stringify(v), embed_text: et.slice(0, 4000) }).eq("id", id);
 }
+// ---------- bug log: every page and the server itself write here; the teacher reads it on the teacher tab ----------
+async function logBug(b: { side: string; page?: string; where_?: string; message: string; stack?: string; student_id?: string; group_id?: string; device?: string; ua?: string; url?: string; extra?: unknown }) {
+  try {
+    const message = s(b.message, 400) || "(no message)"; const fp = await sha256hex([b.side, b.page || "", b.where_ || "", message.replace(/\d+/g, "#")].join("|"));
+    const { data: ex } = await sb.from("bugs").select("id, count").eq("fingerprint", fp).eq("status", "open").gte("at", new Date(Date.now() - 7 * 86400000).toISOString()).order("at", { ascending: false }).limit(1).maybeSingle();
+    if (ex) { await sb.from("bugs").update({ count: n(ex.count) + 1, at: new Date().toISOString(), student_id: b.student_id || null, extra: b.extra ?? null }).eq("id", ex.id); return; }
+    await sb.from("bugs").insert({ side: b.side, page: s(b.page, 40), where_: s(b.where_, 80), message, stack: s(b.stack, 2000), student_id: b.student_id || null, group_id: b.group_id || null, device: s(b.device, 24), ua: s(b.ua, 200), url: s(b.url, 300), extra: b.extra ?? null, fingerprint: fp });
+  } catch (_) { /* never let logging break the app */ }
+}
 function topicOf(prompt: string): string {
   const m = prompt.match(/topic[^"\n]{0,40}"([^"]{3,160})"/i) || prompt.match(/about\s+"([^"]{3,160})"/i) || prompt.match(/TOPIC:\s*([^\n]{3,160})/i);
   return m ? m[1].trim() : "";
@@ -186,6 +195,7 @@ async function claude(req: ReturnType<typeof parse>, me: any) {
   let out: any;
   if (r.ok) { if (j.stop_reason === "refusal") out = { ok: false, code: "refused", error: "Claude did not accept this text." }; else out = { ok: true, text: (Array.isArray(j.content) ? j.content : []).filter((x: any) => x?.type === "text").map((x: any) => x.text).join(""), stop: j.stop_reason || "" }; }
   else { const msg = String(j?.error?.message || ("Claude answered with error " + r.status)); let code = "error"; if (/credit|balance|billing|spend/i.test(msg)) code = "credit"; else if (r.status === 401 || r.status === 403) code = "key"; else if (r.status === 429 || r.status === 529 || r.status >= 500) code = "busy"; else if (r.status === 413 || /too long|too large|too many tokens/i.test(msg)) code = "long"; out = { ok: false, code, status: r.status, error: msg.slice(0, 200) }; }
+  if (!out.ok && out.code !== "refused") await logBug({ side: "server", page: kind, where_: "claude", message: String(out.error || out.code), student_id: me?.student_id, group_id: me?.group_id, extra: { code: out.code, status: out.status } });
   if (kind === "exam" || kind === "writing") {
     const text = out.ok ? String(out.text || "") : ""; const spec = text ? loose(text) : null; const title = (spec && spec.title) || (text.match(/"title"\s*:\s*"([^"]{1,120})"/) || [])[1] || "";
     const skillsStr = Array.isArray(req.body.skills) ? req.body.skills.map(String).join(" ") : "";
@@ -338,6 +348,14 @@ Deno.serve(async (r: Request) => {
     const k = req.kind;
     if (k === "login" || k === "set_pin" || k === "start" || k === "verify") return await login(req);
     const me = await session(req.token);
+    if (k === "bug") { const d = req.data; const ua = s(r.headers.get("user-agent"), 200);
+      if (!s(d.message, 400)) return fail("bad", "No message.");
+      await logBug({ side: "client", page: s(d.page, 40), where_: s(d.where, 80), message: s(d.message, 400), stack: s(d.stack, 2000), student_id: me?.student_id || (req.idOK ? req.id : undefined), group_id: me?.group_id, device: req.device || s(d.device, 24), ua, url: s(d.url, 300), extra: d.extra });
+      return reply({ ok: true }); }
+    if (k === "teacher_bugs" || k === "teacher_bug_set") { if (!me || !(me.role === "teacher" || me.role === "admin" || TEACHER_IDS.has(me.student_id))) return fail("login", "Teacher only.");
+      if (k === "teacher_bug_set") { await sb.from("bugs").update({ status: ["fixed", "ignored", "open"].includes(String(req.data.status)) ? String(req.data.status) : "fixed" }).eq("id", n(req.data.id)); return reply({ ok: true }); }
+      const st = s(req.data.status, 10) || "open"; const { data } = await sb.from("bugs").select("id, at, side, page, where_, message, stack, student_id, device, ua, url, extra, count, status").eq("status", st).order("at", { ascending: false }).limit(n(req.data.limit) || 100);
+      return reply({ ok: true, bugs: data || [] }); }
     if (k === "exam" || k === "coach" || k === "ping" || k === "writing") return await claude(req, me);
     if (k === "result") return await result(req, me);
     if (k === "profile" || k === "board") return await profileView(me);
@@ -351,5 +369,5 @@ Deno.serve(async (r: Request) => {
     if (k.startsWith("project_")) return await projects(req, me);
     if (k.startsWith("teacher_")) return await teacher(req, me);
     return fail("bad", "Unknown request.");
-  } catch (e) { return fail("error", "Server error: " + String((e as Error).message || e).slice(0, 200)); }
+  } catch (e) { const msg = String((e as Error).message || e).slice(0, 300); await logBug({ side: "server", page: req.kind, where_: "serve", message: msg, stack: String((e as Error).stack || "").slice(0, 2000) }); return fail("error", "Server error: " + msg.slice(0, 200)); }
 });
