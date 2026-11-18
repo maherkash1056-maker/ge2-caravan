@@ -16,7 +16,7 @@ Working rules live in the claude.ai project "26FL teaching" (docs `GE2-Caravan-h
 | 3D skin gallery (`ge2-caravan-gallery`) | `https://ge2-caravan-gallery.ge2-caravan.workers.dev/gallery/` |
 | Rally textures (`ge2-caravan-rally`) | `https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/<file>` |
 
-Slots: 1 Studio · 2 Two Windows · 3 Legends · 4/5 Word Royale host/player · 6/7 Wadi Snakes player/host · 8 Fort of Taqah · 9 Khareef Rally (3D) · 10 Dhow to Zanzibar · 11 Brew-Haha.
+Slots: 1 Studio · 2 Two Windows · 3 Legends · 4/5 Word Royale host/player · 6/7 Wadi Snakes player/host · 8 Fort of Taqah · 9 Khareef Rally (3D — its source is `caravan/rally/recovered/`, **not** `quests/rally.html`, which is the old 2D quest) · 10 Dhow to Zanzibar · 11 Brew-Haha.
 
 ## Layout
 ```
@@ -29,7 +29,7 @@ caravan/
   games/art/              snake skins (2D baked), snake3d.js (three.js renderer)
   quests/                 single-player quests (Fort, Dhow, Brew-Haha…) built by quests/build.py
   gallery/                3D skin gallery (index.html + tex/); worker.mjs generated
-  rally/                  texture worker for the 3D Khareef Rally; worker.mjs generated
+  rally/                  3D Khareef Rally (slot 9): recovered/ = byte-exact backup of the live page + its 74 assets, build_worker.py → worker.mjs (generated). See rally/README.md
   project/                Studio modules: paper_client.js (exam-paper view), project_client.js (slides builder)
   writing/                writing feedback assets
   build_class.py          builds the Studio page from studio/class_template.html → build/outputs/GE2-Game-Studio-CLASS-n8n.html

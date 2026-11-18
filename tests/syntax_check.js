@@ -10,6 +10,7 @@ const PAGES = [
   "caravan/games/two_windows.html", "caravan/games/legends.html", "caravan/games/royale_host.html", "caravan/games/royale_play.html",
   "caravan/games/snake_host.html", "caravan/games/snake_play.html", "caravan/games/two_windows_orig.html", "caravan/games/legends_orig.html",
   "caravan/quests/fort.html", "caravan/quests/rally.html", "caravan/quests/dhow.html",
+  "caravan/rally/recovered/Slot-9-Khareef-Rally.html",   // production 3D rally backup (Phase 2A)
 ].map(R).concat(fs.existsSync(P.STUDIO) ? [P.STUDIO] : []);
 const SCRIPTS = [];
 for (const d of ["caravan/games", "caravan/games/art", "caravan/quests", "caravan/quests/art", "caravan/project", "caravan/writing", "caravan/server", "caravan/api", "caravan/worker", "caravan/supa", "studio", "tests", "caravan"])
