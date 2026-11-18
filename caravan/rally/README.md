@@ -7,12 +7,13 @@ on 2026-11-18 and a remastered generator for its asset worker.
 
 | Path | What |
 |---|---|
-| `recovered/Slot-9-Khareef-Rally.html` | the live page, identical in the n8n "GE2 App" table (part 9) and the Cloudflare page store |
-| `recovered/rally_bridge_adapter.js` | script block 3 of that page: `window.RALLY_BRIDGE = {exam, result, parseHash}` |
-| `recovered/tex/**` | all 32 real assets the texture worker serves (colour/normal/roughness textures, sprite PNGs). The 42 `.glb` model names the bundle mentions do not exist on the worker: every model is built procedurally in the bundle (`sM` table, no glTF loader). See `MANIFEST.json` → `phantom_model_paths`. |
+| `/rally3d/index.html` | **the source of slot 9** (teacher's folder, from the project archive). `publish.sh`'s bug-catcher injection turns it into the production page byte for byte. |
+| `/rally3d/adapter.html` | the `RALLY_BRIDGE` adapter: `window.RALLY_BRIDGE = {exam, result, parseHash}` |
+| `/rally3d/tex_s/` | the 32 assets the texture worker serves (colour/normal/roughness textures, sprite PNGs). The 42 `.glb` model names the bundle mentions do not exist on the worker: every model is built procedurally in the bundle (`sM` table, no glTF loader). See `MANIFEST.json` → `phantom_model_paths`. |
+| `recovered/Slot-9-Khareef-Rally.html` | the live page as served on 2026-11-18, identical in the n8n "GE2 App" table (part 9) and the Cloudflare page store — the backup to compare against |
 | `recovered/MANIFEST.json` | sources, retrieval time, SHA-256 of every file |
-| `build_worker.py` | remastered generator: rebuilds `worker.mjs` (gitignored) for the texture worker from `recovered/tex`, same paths, content types, CORS and the same listing answer for unknown paths; `--check` verifies hashes |
-| `check_slot9.py` | guard: refuses a `build/outputs/Slot-9-Khareef-Rally.html` that is the 2D quest instead of a 3D build |
+| `build_worker.py` | remastered generator: rebuilds `worker.mjs` (gitignored) for the texture worker from `rally3d/tex_s`, same paths, content types, CORS and the same listing answer for unknown paths; `--check` verifies hashes |
+| `check_slot9.py` | guard: accepts `build/outputs/Slot-9-Khareef-Rally.html` only if it is `rally3d/index.html`, the production backup, or another 3D build; refuses the 2D quest |
 
 ## How slot 9 talks to the platform
 - Session from the Studio hash `#play&s=TOKEN~ID~ROLE~NAME~SHORT&x=SRC.LEN.TITLE` (same format as `caravan-bridge.js`), parsed by the adapter.
@@ -23,6 +24,6 @@ on 2026-11-18 and a remastered generator for its asset worker.
 - Offline mode: with no session the game runs from a built-in pool of road-sign questions.
 
 ## Do not
-- Edit `recovered/*`: it is the backup. Changes go in a new source tree.
+- Edit `recovered/*`: it is the backup. Changes to the game go in `rally3d/` (or a new source tree) and must keep the adapter contract above.
 - Commit `worker.mjs`: generated, gitignored.
 - Deploy from here: `build_worker.py` only builds.

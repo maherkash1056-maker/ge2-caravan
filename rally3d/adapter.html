@@ -1,3 +1,4 @@
+<script>
 /* GE2 Caravan adapter for the 3D Rally: translates the game's bridge calls into the class server's real protocol. */
 window.RALLY_BRIDGE=(function(){
  const API="https://ge2-caravan-api.ge2-caravan.workers.dev/";
@@ -23,3 +24,4 @@ window.RALLY_BRIDGE=(function(){
   await post({kind:"result",token:ses.token,student:ses.name,device:"GAME",type:"Quest",exam:"Khareef Rally",right,total,grade,score:right*10+(final?((S.stones||[]).length*20):0),won:!!final&&pct>=60,skills,weakest,badges:(S.badges||[]).slice(0,6)});}
  const ses=parseHash();if(ses&&!/(^|&)name=/.test(location.hash)){try{history.replaceState(null,"",location.pathname+location.search+location.hash+"&name="+encodeURIComponent(ses.short||ses.name||""));}catch(e){}}
  return{exam,result,parseHash};})();
+</script>

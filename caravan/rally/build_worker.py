@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # Remastered generator for the `ge2-caravan-rally` texture worker (the original generator was never in Git).
-# Bundles caravan/rally/recovered/tex/** into caravan/rally/worker.mjs, which serves GET /tex/<path> exactly like
+# Bundles rally3d/tex_s/** (the teacher's source folder) into caravan/rally/worker.mjs, which serves GET /tex/<path> exactly like
 # production: same paths, same content types, the same {ok,files:[...]} listing for the root and unknown paths, plus CORS
 # (three.js loads textures cross-origin from the n8n sandbox).
 # Build only — this script never deploys. Deploying is a separate, approved step (see publish.sh for the pattern).
 #   python3 caravan/rally/build_worker.py            → caravan/rally/worker.mjs (gitignored)
-#   python3 caravan/rally/build_worker.py --check    → verify every manifest asset is present with the right hash, build nothing
+#   python3 caravan/rally/build_worker.py --check    → verify every asset in recovered/MANIFEST.json is present in rally3d/tex_s with the right hash, build nothing
 import base64, hashlib, json, os, sys
-HERE = os.path.dirname(os.path.abspath(__file__)); SRC = os.path.join(HERE, "recovered", "tex"); MAN = os.path.join(HERE, "recovered", "MANIFEST.json")
+HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); SRC = os.path.join(ROOT, "rally3d", "tex_s"); MAN = os.path.join(HERE, "recovered", "MANIFEST.json")
 TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".glb": "model/gltf-binary", ".gltf": "model/gltf+json", ".hdr": "image/vnd.radiance", ".json": "application/json"}
 man = json.load(open(MAN, encoding="utf-8")); bad = 0; files = {}
 for a in man["assets"]["files"]:
-    p = os.path.join(HERE, "recovered", a["path"])
+    p = os.path.join(SRC, a["path"].split("tex/", 1)[1])
     if not os.path.exists(p): print("MISSING", a["path"]); bad += 1; continue
     data = open(p, "rb").read(); h = hashlib.sha256(data).hexdigest()
     if h != a["sha256"]: print("HASH MISMATCH", a["path"]); bad += 1; continue

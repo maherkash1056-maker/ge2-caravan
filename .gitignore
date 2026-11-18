@@ -4,6 +4,7 @@
 !/README.md
 !/caravan/
 !/studio/
+!/rally3d/
 # Phase 1 tooling (dev-only; build/ and node_modules/ stay ignored by the /* rule above)
 !/package.json
 !/package-lock.json

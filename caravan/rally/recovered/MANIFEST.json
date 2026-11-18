@@ -24,9 +24,9 @@
   "note": "The n8n row html and the Cloudflare GET returned the same SHA-256."
  },
  "adapter": {
-  "path": "rally_bridge_adapter.js",
-  "sha256": "f92ab5263e39f9aa386a457eb53b2093565e4ac3ecd5ba1ca9ce6fca76287d19",
-  "note": "Script block 3 of the page, extracted verbatim (window.RALLY_BRIDGE: exam, result, parseHash)."
+  "path": "../../../rally3d/adapter.html",
+  "sha256": "0dae2af047b0c53b16c51d2f0c0b6ff1467008024cbf748f758a3217a06d2507",
+  "note": "Script block of the page, identical to the one in production."
  },
  "assets": {
   "count": 32,
@@ -290,7 +290,8 @@
     "content_type": "image/jpeg",
     "sha256": "c051a58202fb4db3797ee4ae43d40d12942cf8928f6aa91c7782922885aa90ca"
    }
-  ]
+  ],
+  "note": "paths are relative to the worker (tex/<name>); the files live in rally3d/tex_s/<name>"
  },
  "production_worker_listing": {
   "note": "GET on the ge2-caravan-rally worker for any path it does not have returns this JSON with HTTP 200 (same as its root). It names every asset the worker really serves.",
@@ -379,5 +380,12 @@
    "vehicles/suv_4x4.glb",
    "vehicles/taxi_minibus.glb"
   ]
+ },
+ "source_of_truth": {
+  "folder": "rally3d/",
+  "note": "The teacher's source folder (from the project archive, 2026-11-18). rally3d/index.html + publish.sh's bug-catcher injection reproduces the production page byte for byte; rally3d/adapter.html is the RALLY_BRIDGE adapter; rally3d/tex_s/ holds the 32 worker assets (same hashes as listed under assets). The copies of the adapter and textures that this folder briefly held were removed as duplicates.",
+  "index_html_sha256": "a3612afe422bcf70720f80880f744f641f772af07cabf6242cb367889b784628",
+  "adapter_html_sha256": "0dae2af047b0c53b16c51d2f0c0b6ff1467008024cbf748f758a3217a06d2507",
+  "reproduces_production": true
  }
 }

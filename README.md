@@ -16,7 +16,7 @@ Working rules live in the claude.ai project "26FL teaching" (docs `GE2-Caravan-h
 | 3D skin gallery (`ge2-caravan-gallery`) | `https://ge2-caravan-gallery.ge2-caravan.workers.dev/gallery/` |
 | Rally textures (`ge2-caravan-rally`) | `https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/<file>` |
 
-Slots: 1 Studio · 2 Two Windows · 3 Legends · 4/5 Word Royale host/player · 6/7 Wadi Snakes player/host · 8 Fort of Taqah · 9 Khareef Rally (3D — its source is `caravan/rally/recovered/`, **not** `quests/rally.html`, which is the old 2D quest) · 10 Dhow to Zanzibar · 11 Brew-Haha.
+Slots: 1 Studio · 2 Two Windows · 3 Legends · 4/5 Word Royale host/player · 6/7 Wadi Snakes player/host · 8 Fort of Taqah · 9 Khareef Rally (3D — its source is `rally3d/index.html`, **not** `quests/rally.html`, which is the old 2D quest) · 10 Dhow to Zanzibar · 11 Brew-Haha.
 
 ## Layout
 ```
@@ -29,12 +29,14 @@ caravan/
   games/art/              snake skins (2D baked), snake3d.js (three.js renderer)
   quests/                 single-player quests (Fort, Dhow, Brew-Haha…) built by quests/build.py
   gallery/                3D skin gallery (index.html + tex/); worker.mjs generated
-  rally/                  3D Khareef Rally (slot 9): recovered/ = byte-exact backup of the live page + its 74 assets, build_worker.py → worker.mjs (generated). See rally/README.md
+  rally/                  3D Khareef Rally tooling: recovered/ = backup of the live slot 9 page + provenance, build_worker.py → worker.mjs (generated), check_slot9.py guard. See rally/README.md
   project/                Studio modules: paper_client.js (exam-paper view), project_client.js (slides builder)
   writing/                writing feedback assets
   build_class.py          builds the Studio page from studio/class_template.html → build/outputs/GE2-Game-Studio-CLASS-n8n.html
   publish.sh              bundles the 11 slot pages into files/worker.mjs and deploys it to Cloudflare
   verify_live.py          compares the n8n "GE2 App" table copy with the built outputs (must print IDENTICAL ×11)
+rally3d/
+  index.html              THE 3D Khareef Rally page (slot 9); adapter.html = RALLY_BRIDGE; tex_s/ = the 32 assets the ge2-caravan-rally worker serves
 studio/
   class_template.html     the Studio (tabs: play, make, exam, project, teacher); core.js/exam.js/editor.js + mod_*.js are its parts
 ```
