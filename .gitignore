@@ -4,6 +4,10 @@
 !/README.md
 !/caravan/
 !/studio/
+# Phase 1 tooling (dev-only; build/ and node_modules/ stay ignored by the /* rule above)
+!/package.json
+!/package-lock.json
+!/tests/
 
 # never: secrets, student data, raw uploads, generated bundles, n8n exports (they embed credentials)
 caravan/secrets/
