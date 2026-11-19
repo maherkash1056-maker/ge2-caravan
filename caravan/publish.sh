@@ -1,11 +1,15 @@
 #!/bin/bash
 # Publish the Caravan pages: build the Cloudflare file-server worker from the output files, deploy it, then trigger the n8n sync.
+# Paths: runs from its own folder (caravan/); the 11 built slot pages are read from $CARAVAN_OUT (default <repo>/build/outputs).
 set -e
-cd /home/claude/caravan
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; cd "$HERE"
+export CARAVAN_OUT="${CARAVAN_OUT:-$(cd "$HERE/.." && pwd)/build/outputs}"
 python3 - <<'PY'
-import json
-slots={1:"/mnt/user-data/outputs/GE2-Game-Studio-CLASS-n8n.html",2:"/mnt/user-data/outputs/Class-Game-2-Two-Windows-Ajnan.html",3:"/mnt/user-data/outputs/Class-Game-3-2-Legends-Wijdan-Khlood.html",4:"/mnt/user-data/outputs/Slot-4-Word-Royale-HOST.html",5:"/mnt/user-data/outputs/Slot-5-Word-Royale-PLAYER.html",6:"/mnt/user-data/outputs/Slot-6-Wadi-Snakes-PLAYER.html",7:"/mnt/user-data/outputs/Slot-7-Wadi-Snakes-HOST.html",8:"/mnt/user-data/outputs/Slot-8-Fort-of-Taqah.html",9:"/mnt/user-data/outputs/Slot-9-Khareef-Rally.html",10:"/mnt/user-data/outputs/Slot-10-Dhow-to-Zanzibar.html",11:"/mnt/user-data/outputs/Slot-11-Brew-Haha.html"}
-BUG=open('/home/claude/caravan/bugcatch.js',encoding='utf-8').read().strip()
+import json,os
+O=os.environ["CARAVAN_OUT"]; os.makedirs("files",exist_ok=True)
+names={1:"GE2-Game-Studio-CLASS-n8n.html",2:"Class-Game-2-Two-Windows-Ajnan.html",3:"Class-Game-3-2-Legends-Wijdan-Khlood.html",4:"Slot-4-Word-Royale-HOST.html",5:"Slot-5-Word-Royale-PLAYER.html",6:"Slot-6-Wadi-Snakes-PLAYER.html",7:"Slot-7-Wadi-Snakes-HOST.html",8:"Slot-8-Fort-of-Taqah.html",9:"Slot-9-Khareef-Rally.html",10:"Slot-10-Dhow-to-Zanzibar.html",11:"Slot-11-Brew-Haha.html"}
+slots={k:os.path.join(O,v) for k,v in names.items()}
+BUG=open('bugcatch.js',encoding='utf-8').read().strip()
 def inject(h):
     if 'CARAVAN_BUGCATCH' in h: return h
     i=h.find('<head'); j=h.find('>',i)+1 if i>=0 else -1

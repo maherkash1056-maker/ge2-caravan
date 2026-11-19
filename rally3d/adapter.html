@@ -1,0 +1,27 @@
+<script>
+/* GE2 Caravan adapter for the 3D Rally: translates the game's bridge calls into the class server's real protocol. */
+window.RALLY_BRIDGE=(function(){
+ const API="https://ge2-caravan-api.ge2-caravan.workers.dev/";
+ function parseHash(){const h=location.hash.replace(/^#/,"");let s="";h.split("&").forEach(seg=>{if(seg.indexOf("s=")===0)s=seg.slice(2);});if(!s)return null;const a=s.split("~");if(a.length<2||a[0].length<8)return null;return{token:a[0],id:a[1],role:a[2]||"student",name:decodeURIComponent(a[3]||""),short:decodeURIComponent(a[4]||"")};}
+ function parseSetup(){const h=location.hash.replace(/^#/,"");let x="";h.split("&").forEach(seg=>{if(seg.indexOf("x=")===0)x=seg.slice(2);});if(!x)return null;const a=x.split(".");const src=a[0]||"claude";if(src==="claude"&&!(+a[1]))return null;return{src,len:+a[1]||0,title:decodeURIComponent(a.slice(2).join(".")||"")};}
+ async function post(payload){const r=await fetch(API,{method:"POST",headers:{"content-type":"text/plain;charset=UTF-8"},body:JSON.stringify(payload),keepalive:true});let j=null;try{j=await r.json();}catch(e){}return{ok:r.ok,j};}
+ function prompt(n){return ["Write a practice exam for students of General English 2 (GE2, CEFR B1) at the University of Technology and Applied Sciences in Salalah, Oman. The students are Arabic speakers aged 18 to 21. They answer inside a driving game called \"Khareef Rally\" (a road trip from Salalah to Mirbat); one question at a time, with the sentence that proves the answer shown beside each question.",
+  "","SOURCE","Write the text yourself about a road trip in Dhofar: places along the Salalah-Mirbat road (Taqah, Khor Rori, Mirbat), the khareef season, frankincense, fishing, camels, driving safely. Use true, well-known facts; no invented statistics.",
+  "","TEXT: one reading text (\"kind\":\"read\"), 220-300 words, 3 or 4 paragraphs each starting with [A], [B], … B1 level: clear sentences of 10-20 words. Modest and respectful; no romance, no alcohol, no politics.",
+  "","QUESTIONS: exactly "+n+" questions, shared as evenly as possible between these two types:",
+  '- "abc": a detail question with 3 "options", only one correct; "answer" is "A", "B" or "C". ("skill":"r_abc")',
+  '- "word": a sentence with a gap ____ to fill with ONE WORD or a number taken from the text; "answer" is that word (give alternatives separated by " / " only if the text allows them). ("skill":"r_word")',
+  "Every answer must be provable from the text; put the exact words that prove it in \"evidence\". \"why\": one short simple sentence shown after the student answers. Exactly one answer is correct; wrong options must be possible but clearly wrong for a careful reader. Do not test the same fact twice.",
+  "","OUTPUT: reply with ONLY one JSON object: {\"title\":\"2-5 words\",\"texts\":[{\"title\":\"…\",\"kind\":\"read\",\"body\":\"[A] …\\n\\n[B] …\"}],\"questions\":[{\"type\":\"abc\",\"text\":0,\"q\":\"…\",\"options\":[\"…\",\"…\",\"…\"],\"answer\":\"B\",\"evidence\":\"…\",\"why\":\"…\",\"skill\":\"r_abc\"},{\"type\":\"word\",\"text\":0,\"q\":\"… ____ …\",\"answer\":\"…\",\"evidence\":\"…\",\"why\":\"…\",\"skill\":\"r_word\"}]}"].join("\n");}
+ function toGame(raw){let j=raw;if(typeof j==="string"){const m=j.match(/\{[\s\S]*\}/);j=JSON.parse(m?m[0]:j);}const qs=(j.questions||j.qs||[]).map(q=>({type:q.type,q:q.q,opts:q.options||q.opts||[],a:q.answer!==undefined?q.answer:q.a,evidence:q.evidence||q.ev||"",why:q.why||"",skill:q.skill}));return{title:j.title||"",texts:j.texts||[],questions:qs};}
+ async function exam(Do){const ses=parseHash();if(!ses)throw new Error("no session");const su=parseSetup();
+  if(su&&(su.src==="bank"||su.src==="mine")){const data=su.src==="mine"?{title:su.title}:{skills:["r_abc","r_word"],len:su.len||15};const r=await post({kind:"bank",token:ses.token,data});const j=r.j||{};if(!j.ok||!j.spec)throw new Error(j.error||"bank empty");return toGame(j.spec);}
+  const n=(su&&su.src==="claude"&&su.len)?su.len:15;
+  const r=await post({kind:"exam",token:ses.token,student:ses.name,device:"GAME",prompt:prompt(n),images:[],fast:false,skills:["r_abc","r_word"],len:n,style:true,awl:true,game:"Khareef Rally"});
+  const j=r.j||{};if(!j.ok)throw new Error(j.error||j.code||"exam failed");return toGame(j.text);}
+ async function result(Do,S,items,final){const ses=parseHash();if(!ses||!items.length)return;const sk={};for(const it of items){const id=it.skill||"r_abc";sk[id]=sk[id]||{id,name:id==="r_abc"?"A, B or C questions":(id==="r_word"||id==="r_one")?"One word or a number":id,r:0,n:0};sk[id].n++;if(it.ok)sk[id].r++;}
+  const right=items.filter(i=>i.ok).length,total=items.length,pct=Math.round(100*right/total),grade=pct>=90?"A":pct>=80?"B":pct>=70?"C":pct>=60?"D":"F";const skills=Object.values(sk);const weakest=(skills.filter(x=>x.r<x.n).sort((a,b)=>a.r/a.n-b.r/b.n)[0]||{}).name||"";
+  await post({kind:"result",token:ses.token,student:ses.name,device:"GAME",type:"Quest",exam:"Khareef Rally",right,total,grade,score:right*10+(final?((S.stones||[]).length*20):0),won:!!final&&pct>=60,skills,weakest,badges:(S.badges||[]).slice(0,6)});}
+ const ses=parseHash();if(ses&&!/(^|&)name=/.test(location.hash)){try{history.replaceState(null,"",location.pathname+location.search+location.hash+"&name="+encodeURIComponent(ses.short||ses.name||""));}catch(e){}}
+ return{exam,result,parseHash};})();
+</script>

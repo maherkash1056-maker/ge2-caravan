@@ -1,0 +1,20 @@
+{
+  "name": "ge2-caravan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GE2 Caravan — dev tooling only (build + Playwright checks). The platform itself is static pages + Supabase/Cloudflare/n8n; this file adds no runtime dependency.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build:studio": "python3 caravan/build_class.py",
+    "build:quests": "python3 caravan/quests/build.py",
+    "build": "npm run build:studio && npm run build:quests",
+    "test:syntax": "node tests/syntax_check.js",
+    "test:smoke": "node tests/smoke_pages.js",
+    "test:local": "node tests/run.js local",
+    "test:live": "node tests/run.js live",
+    "test:all": "npm run test:syntax && node tests/run.js all"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

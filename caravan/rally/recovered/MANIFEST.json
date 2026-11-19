@@ -1,0 +1,391 @@
+{
+ "what": "Byte-exact backup of production slot 9 (Khareef Rally 3D) and every asset it references. Read-only recovery; nothing here was modified.",
+ "retrieved_at": "2026-11-18T10:05:31Z",
+ "page": {
+  "path": "Slot-9-Khareef-Rally.html",
+  "bytes": 1061935,
+  "sha256": "c134823b7ee16fb95a00d1eea0b4a6b8e35b8250540a626856ac4d758fff4b0c",
+  "sources": [
+   {
+    "kind": "n8n data table",
+    "table": "GE2 App",
+    "table_id": "DR5ObiBlQiFYwbic",
+    "row_id": 10,
+    "part": 9,
+    "updatedAt": "2026-11-17T11:19:16.343Z",
+    "createdAt": "2026-11-10T10:00:55.480Z"
+   },
+   {
+    "kind": "cloudflare page store",
+    "url": "https://ge2-caravan-files.ge2-caravan.workers.dev/slot/9"
+   }
+  ],
+  "sources_identical": true,
+  "note": "The n8n row html and the Cloudflare GET returned the same SHA-256."
+ },
+ "adapter": {
+  "path": "../../../rally3d/adapter.html",
+  "sha256": "0dae2af047b0c53b16c51d2f0c0b6ff1467008024cbf748f758a3217a06d2507",
+  "note": "Script block of the page, identical to the one in production."
+ },
+ "assets": {
+  "count": 32,
+  "total_bytes": 2182989,
+  "all_http_200": true,
+  "matches_production_listing": true,
+  "files": [
+   {
+    "path": "tex/asphalt_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/asphalt_c.jpg",
+    "http": 200,
+    "bytes": 166202,
+    "content_type": "image/jpeg",
+    "sha256": "a3c533b69399aceb736ecc08ee011519832227b2d2e69eb2e21e02e900a73646"
+   },
+   {
+    "path": "tex/asphalt_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/asphalt_n.jpg",
+    "http": 200,
+    "bytes": 72276,
+    "content_type": "image/jpeg",
+    "sha256": "42d1ee488c2debc8ded45ed1e51e9e1a1c3938578a8a599c0f51d7002189a17a"
+   },
+   {
+    "path": "tex/asphalt_r.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/asphalt_r.jpg",
+    "http": 200,
+    "bytes": 46977,
+    "content_type": "image/jpeg",
+    "sha256": "3d9bafcad32ccd8939bd2c9b9c21ffbb470858243b0d77ae0ad67c549c0faeeb"
+   },
+   {
+    "path": "tex/blanket_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/blanket_c.jpg",
+    "http": 200,
+    "bytes": 55683,
+    "content_type": "image/jpeg",
+    "sha256": "1223681a3bd76e091919b57f76438f67492d7f01a4508ebb127b93414981c3fa"
+   },
+   {
+    "path": "tex/bougain.png",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/bougain.png",
+    "http": 200,
+    "bytes": 64172,
+    "content_type": "image/png",
+    "sha256": "3634c036c1ed02967a7987125b4fa947b594760b8dca761c0b41c644628002f0"
+   },
+   {
+    "path": "tex/camel_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/camel_c.jpg",
+    "http": 200,
+    "bytes": 28820,
+    "content_type": "image/jpeg",
+    "sha256": "446cb2ec8be106f97c86a9b89a7829cd3d0b5121ed83b3ee14a5768441073df7"
+   },
+   {
+    "path": "tex/camel_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/camel_n.jpg",
+    "http": 200,
+    "bytes": 94108,
+    "content_type": "image/jpeg",
+    "sha256": "9609af0de2d6411c36beafc0d6898b90efa90731570b88e9fb45dee7f492698f"
+   },
+   {
+    "path": "tex/dirt_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/dirt_c.jpg",
+    "http": 200,
+    "bytes": 110653,
+    "content_type": "image/jpeg",
+    "sha256": "360a10c366174e7773f53d789ac13926dae241daa06dd522103d57f6a9993194"
+   },
+   {
+    "path": "tex/dirt_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/dirt_n.jpg",
+    "http": 200,
+    "bytes": 60993,
+    "content_type": "image/jpeg",
+    "sha256": "133f38942ca9e0c4636cb248983930060bc96edcd95ae343a4edde0005a0c037"
+   },
+   {
+    "path": "tex/fortwall_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/fortwall_c.jpg",
+    "http": 200,
+    "bytes": 81973,
+    "content_type": "image/jpeg",
+    "sha256": "d3dffc5b302f7a38f47195824c6f6914347da97275cb7839c7e2aafe6caddd2d"
+   },
+   {
+    "path": "tex/fortwall_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/fortwall_n.jpg",
+    "http": 200,
+    "bytes": 21986,
+    "content_type": "image/jpeg",
+    "sha256": "ac3f03e4752ef1b94748f890fa77057d66eb9f0d3162bd897d5f23ffd6b63a00"
+   },
+   {
+    "path": "tex/frankleaf.png",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/frankleaf.png",
+    "http": 200,
+    "bytes": 50005,
+    "content_type": "image/png",
+    "sha256": "e79e9b255e6ddd7b2e3119e219690559c58cb521f7336baf2a99db76aeab7d82"
+   },
+   {
+    "path": "tex/grass_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/grass_c.jpg",
+    "http": 200,
+    "bytes": 187627,
+    "content_type": "image/jpeg",
+    "sha256": "eef5e90c8f159f651c690af963f1f73c99e0aafdd2045065c3e030d69d62d63e"
+   },
+   {
+    "path": "tex/grass_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/grass_n.jpg",
+    "http": 200,
+    "bytes": 61323,
+    "content_type": "image/jpeg",
+    "sha256": "15285c16040caad0e9728b74e5ad91a3701352c418ef860aa60f7e2038b407de"
+   },
+   {
+    "path": "tex/grasscard.png",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/grasscard.png",
+    "http": 200,
+    "bytes": 32709,
+    "content_type": "image/png",
+    "sha256": "99869306163e2ffdfab80c5d71fa02e878cdce8cc3d4ed9a499a5f4737b2a635"
+   },
+   {
+    "path": "tex/palmbark_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/palmbark_c.jpg",
+    "http": 200,
+    "bytes": 45970,
+    "content_type": "image/jpeg",
+    "sha256": "13dd40be88f94e8bf5862b007e33303451f0915f3bd62dcd356573c94402d01a"
+   },
+   {
+    "path": "tex/palmbark_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/palmbark_n.jpg",
+    "http": 200,
+    "bytes": 40761,
+    "content_type": "image/jpeg",
+    "sha256": "a316e7920e5165ca015b48140c1fb6b65491def2a360830acc2e108c73238ea0"
+   },
+   {
+    "path": "tex/palmfrond.png",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/palmfrond.png",
+    "http": 200,
+    "bytes": 13011,
+    "content_type": "image/png",
+    "sha256": "4f358f1070bcb091259a65265688dbe5c7009e0c7d88f381d7029913093c7a65"
+   },
+   {
+    "path": "tex/plaster_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/plaster_c.jpg",
+    "http": 200,
+    "bytes": 70508,
+    "content_type": "image/jpeg",
+    "sha256": "e7432c5a94c5e2301020d871aba9bb006db103dc6ca8dfbd4eb335cb2007c6ab"
+   },
+   {
+    "path": "tex/plaster_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/plaster_n.jpg",
+    "http": 200,
+    "bytes": 73075,
+    "content_type": "image/jpeg",
+    "sha256": "1cd0da508c47f67e01bb982865c7af3d1c591da860f9e51bf4d4a142bb9b096b"
+   },
+   {
+    "path": "tex/relief_ao.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/relief_ao.jpg",
+    "http": 200,
+    "bytes": 82317,
+    "content_type": "image/jpeg",
+    "sha256": "4d2aebec2e81c4b5b605058ba93cc0b3e59bca324e4228e8780ea51d89790571"
+   },
+   {
+    "path": "tex/relief_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/relief_n.jpg",
+    "http": 200,
+    "bytes": 91837,
+    "content_type": "image/jpeg",
+    "sha256": "75a2bc33b314b6825260dd35899ed9fe0cb1c3910e3b7b3412ce262b60c1ee3d"
+   },
+   {
+    "path": "tex/rock_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/rock_c.jpg",
+    "http": 200,
+    "bytes": 126944,
+    "content_type": "image/jpeg",
+    "sha256": "d209bae728cd03e1b70fc4e478e6fe36e5b471c1a424914549fb437ee2107097"
+   },
+   {
+    "path": "tex/rock_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/rock_n.jpg",
+    "http": 200,
+    "bytes": 106794,
+    "content_type": "image/jpeg",
+    "sha256": "f3a8908d23d9f332a71b6b3e75190986aad3ff41f21b7d051394f509f9a6eec2"
+   },
+   {
+    "path": "tex/sand_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/sand_c.jpg",
+    "http": 200,
+    "bytes": 102444,
+    "content_type": "image/jpeg",
+    "sha256": "5677c2487d69d7c9d8c3af325eef9cabaf5672ba34e302a9e5a604ad1b77d8a6"
+   },
+   {
+    "path": "tex/sand_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/sand_n.jpg",
+    "http": 200,
+    "bytes": 55167,
+    "content_type": "image/jpeg",
+    "sha256": "660610ae66d14b866b66b5f0706fefe5edab3d0bc8997bda80778fb154e12269"
+   },
+   {
+    "path": "tex/sea_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/sea_n.jpg",
+    "http": 200,
+    "bytes": 66870,
+    "content_type": "image/jpeg",
+    "sha256": "26a5adcf8af00a940b4b48c498cdf3af645b8c581d56b490c7a4bd5eea7538cb"
+   },
+   {
+    "path": "tex/shrub.png",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/shrub.png",
+    "http": 200,
+    "bytes": 57782,
+    "content_type": "image/png",
+    "sha256": "d76a206e9189d90250443433c159638dd19330cb47404ba5c723cf64d71bc01f"
+   },
+   {
+    "path": "tex/tyre_ao.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/tyre_ao.jpg",
+    "http": 200,
+    "bytes": 7428,
+    "content_type": "image/jpeg",
+    "sha256": "faf88ebe7bdbf7dc9390b7e1968def69eb98ef8a53f56dcbaa0f80af8193bdec"
+   },
+   {
+    "path": "tex/tyre_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/tyre_n.jpg",
+    "http": 200,
+    "bytes": 10688,
+    "content_type": "image/jpeg",
+    "sha256": "4ef8ec319220f7bf9f434ac41c24504c193fd31e5c24d30cbccaffa1fb2cfdf5"
+   },
+   {
+    "path": "tex/wood_c.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/wood_c.jpg",
+    "http": 200,
+    "bytes": 34364,
+    "content_type": "image/jpeg",
+    "sha256": "490d07175b646e43ebd7f23b8cc2a661f6f7580bab26deb0f10ccc49616c1b39"
+   },
+   {
+    "path": "tex/wood_n.jpg",
+    "source": "https://ge2-caravan-rally.ge2-caravan.workers.dev/tex/wood_n.jpg",
+    "http": 200,
+    "bytes": 61522,
+    "content_type": "image/jpeg",
+    "sha256": "c051a58202fb4db3797ee4ae43d40d12942cf8928f6aa91c7782922885aa90ca"
+   }
+  ],
+  "note": "paths are relative to the worker (tex/<name>); the files live in rally3d/tex_s/<name>"
+ },
+ "production_worker_listing": {
+  "note": "GET on the ge2-caravan-rally worker for any path it does not have returns this JSON with HTTP 200 (same as its root). It names every asset the worker really serves.",
+  "json": {
+   "ok": true,
+   "files": [
+    "asphalt_c.jpg",
+    "asphalt_n.jpg",
+    "asphalt_r.jpg",
+    "blanket_c.jpg",
+    "bougain.png",
+    "camel_c.jpg",
+    "camel_n.jpg",
+    "dirt_c.jpg",
+    "dirt_n.jpg",
+    "fortwall_c.jpg",
+    "fortwall_n.jpg",
+    "frankleaf.png",
+    "grass_c.jpg",
+    "grass_n.jpg",
+    "grasscard.png",
+    "palmbark_c.jpg",
+    "palmbark_n.jpg",
+    "palmfrond.png",
+    "plaster_c.jpg",
+    "plaster_n.jpg",
+    "relief_ao.jpg",
+    "relief_n.jpg",
+    "rock_c.jpg",
+    "rock_n.jpg",
+    "sand_c.jpg",
+    "sand_n.jpg",
+    "sea_n.jpg",
+    "shrub.png",
+    "tyre_ao.jpg",
+    "tyre_n.jpg",
+    "wood_c.jpg",
+    "wood_n.jpg"
+   ]
+  }
+ },
+ "phantom_model_paths": {
+  "note": "The page bundle names these .glb files but the production worker does not have them (it answers with the listing above). The bundle has no glTF loader; its sM table builds every model procedurally, so these names are placeholders for future real models. Nothing to recover.",
+  "count": 42,
+  "paths": [
+   "animals/camel.glb",
+   "animals/camel_saddled.glb",
+   "buildings/coastal_fort.glb",
+   "buildings/dhow_moored.glb",
+   "buildings/dhow_sailing.glb",
+   "buildings/fort_cannon.glb",
+   "buildings/fuel_station.glb",
+   "buildings/omani_house_courtyard.glb",
+   "buildings/omani_house_mirbat.glb",
+   "buildings/omani_house_two_storey.glb",
+   "buildings/watchtower.glb",
+   "nature/bougainvillea.glb",
+   "nature/boulder.glb",
+   "nature/coconut_palm_a.glb",
+   "nature/coconut_palm_b.glb",
+   "nature/coconut_palm_lod.glb",
+   "nature/frankincense_tree_a.glb",
+   "nature/frankincense_tree_b.glb",
+   "nature/grass_tuft.glb",
+   "nature/khareef_shrub.glb",
+   "road/caravan_stone.glb",
+   "road/direction_sign.glb",
+   "road/finish_arch.glb",
+   "road/knowledge_stop_gate.glb",
+   "road/reflector_post.glb",
+   "road/roadworks.glb",
+   "road/rockfall.glb",
+   "road/speed_limit_80.glb",
+   "road/start_arch.glb",
+   "road/street_lamp.glb",
+   "road/tourist_sign_darbat.glb",
+   "road/traffic_cone.glb",
+   "road/warning_camels.glb",
+   "road/warning_falling_rocks.glb",
+   "road/warning_khareef_fog.glb",
+   "road/warning_sharp_bends.glb",
+   "road/water_barrier.glb",
+   "road/wooden_signpost.glb",
+   "vehicles/pickup.glb",
+   "vehicles/saloon.glb",
+   "vehicles/suv_4x4.glb",
+   "vehicles/taxi_minibus.glb"
+  ]
+ },
+ "source_of_truth": {
+  "folder": "rally3d/",
+  "note": "The teacher's source folder (from the project archive, 2026-11-18). rally3d/index.html + publish.sh's bug-catcher injection reproduces the production page byte for byte; rally3d/adapter.html is the RALLY_BRIDGE adapter; rally3d/tex_s/ holds the 32 worker assets (same hashes as listed under assets). The copies of the adapter and textures that this folder briefly held were removed as duplicates.",
+  "index_html_sha256": "a3612afe422bcf70720f80880f744f641f772af07cabf6242cb367889b784628",
+  "adapter_html_sha256": "0dae2af047b0c53b16c51d2f0c0b6ff1467008024cbf748f758a3217a06d2507",
+  "reproduces_production": true
+ }
+}

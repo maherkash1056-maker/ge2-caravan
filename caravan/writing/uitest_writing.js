@@ -1,3 +1,4 @@
+const P=require("../../tests/paths.js"); // portable build/tmp paths (see tests/paths.js)
 const http=require('http'),fs=require('fs');const {chromium}=require('playwright');
 const FB={ok:true,text:JSON.stringify({title:"Cause and effect: prompt 4",quality:"ok",transcript:"Using phones a lot is very important. In this essay I will write about the causes and effects of using phones.\n\nTo begin with, using phones has a lot of causes such as social media, games and studing [?]. First, social media is a big cause becaus it is used by young people. For example, teenagers watch videos. Next, games are also a big cause.",words:58,unclear:[{guess:"studing",context:"social media, games and ___ ."}],parts:{hook:true,thesis:true,topic1:true,topic2:false,conclusion:false,opinion:false,advice:false},examples:{found:1,concrete:0},bands:{task:2,organisation:2,grammar:3,vocabulary:3},score:4,good:["Your thesis sentence follows the template exactly.","You used 'To begin with' and 'First' correctly."],fix:[{wrote:"For example, teenagers watch videos.",better:"For example, teenagers in Salalah watch short videos for three hours every night.",why:"An example needs a place, a number or a name."},{wrote:"becaus",better:"because",why:"Spelling: because."}],task:{type:"write",title:"Three real examples",what:"Write Body 2 with three effects. Each effect needs an example with a place, a number or a name.",skills:[]}})};
 const posts=[];
@@ -7,19 +8,19 @@ http.createServer((req,res)=>{let b="";req.on("data",c=>b+=c);req.on("end",()=>{
  if(j.kind==="writing")out=FB; if(j.kind==="result")out={ok:true,profile:{xp:60,level:1,title:"Apprentice",gained:44,newBadges:[{id:"scribe",name:"Scribe"}],badges:[],unlocks:[],nextXp:100,prevXp:0}};
  console.log("HOOK",j.kind,j.kind==="writing"?"images="+(j.images||[]).length+" promptHas="+/TRANSCRIPT CONFIRMED/.test(j.prompt):"",j.kind==="result"?JSON.stringify({type:j.type,score:j.score,badges:j.badges,right:j.right}):"");
  res.setHeader("content-type","application/json");res.end(JSON.stringify(out));});}).listen(8897);
-const page=fs.readFileSync("/mnt/user-data/outputs/GE2-Game-Studio-CLASS-n8n.html","utf8").replace('window.CLASS_HOOK_URL="https://ge2-caravan-api.ge2-caravan.workers.dev/"','window.CLASS_HOOK_URL="http://127.0.0.1:8897/webhook/ge2-studio"');
+const page=fs.readFileSync(P.requireStudio(),"utf8").replace('window.CLASS_HOOK_URL="https://ge2-caravan-api.ge2-caravan.workers.dev/"','window.CLASS_HOOK_URL="http://127.0.0.1:8897/webhook/ge2-studio"');
 http.createServer((req,res)=>{res.setHeader("content-type","text/html; charset=utf-8");res.setHeader("content-security-policy","sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads");res.end(page);}).listen(8899);
 (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:430,height:900}});p.on("pageerror",e=>console.log("PAGEERROR",e.message));p.on("console",m=>{if(m.type()==="error")console.log("CONSOLE",m.text().slice(0,200));});
  await p.goto("http://127.0.0.1:8899/webhook/ge2-studio-app");await p.waitForTimeout(800);
  await p.fill("#xid","46J2696");await p.fill("#xpin","1234");await p.click("#xsend");await p.waitForTimeout(1200);
  console.log("write box visible:",await p.isVisible("#xwrite"));await p.click("#xwrite summary");await p.waitForTimeout(300);
  console.log("options:",await p.$$eval("#wprompt option",o=>o.length));await p.selectOption("#wprompt","4");
- await p.setInputFiles("#wfile","/home/claude/caravan/writing/sample.jpg");await p.waitForTimeout(800);
+ await p.setInputFiles("#wfile",__dirname+"/sample.jpg");await p.waitForTimeout(800);
  console.log("thumbs:",await p.$$eval(".wthumb",x=>x.length),"send enabled:",await p.isEnabled("#wsend"),"msg:",await p.textContent("#wmsg"));
  await p.click("#wsend");await p.waitForTimeout(1500);
  console.log("unclear form:",await p.isVisible("#wconfirm"),(await p.textContent("#wout")).slice(0,120));
  await p.fill('[data-wfix="0"]',"studying");await p.click("#wconfirm");await p.waitForTimeout(1500);
  const t=await p.textContent("#wout");console.log("result shows score:",/4\s*\/ 10/.test(t),"task:",/Three real examples/.test(t),"fix:",/because/.test(t));
- await p.screenshot({path:"/home/claude/caravan/writing/shot.png",fullPage:false});
+ await p.screenshot({path:P.shot("writing_shot.png"),fullPage:false});
  const w=posts.filter(x=>x.kind==="writing");console.log("writing calls:",w.length,"second has transcript:",/studying/.test(w[1]&&w[1].prompt||""));
  await b.close();process.exit(0);})();
