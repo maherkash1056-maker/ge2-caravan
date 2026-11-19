@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "description": "GE2 Caravan — dev tooling only (build + Playwright checks). The platform itself is static pages + Supabase/Cloudflare/n8n; this file adds no runtime dependency.",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build:studio": "python3 caravan/build_class.py",
-    "build:quests": "python3 caravan/quests/build.py",
+    "build:fort3d": "node caravan/quests/fort3d/build.js",
+    "build:quests": "npm run build:fort3d && python3 caravan/quests/build.py",
     "build": "npm run build:studio && npm run build:quests",
     "test:syntax": "node tests/syntax_check.js",
     "test:smoke": "node tests/smoke_pages.js",
@@ -14,9 +17,15 @@
     "test:live": "node tests/run.js live",
     "test:all": "npm run test:syntax && node tests/run.js all",
     "test:rally": "node --test tests/rally/adapter.test.js tests/rally/content.test.js && node tests/rally/acceptance.js && node tests/rally/mobile.js",
-    "rally:content": "node caravan/rally/extract_content.js"
+    "rally:content": "node caravan/rally/extract_content.js",
+    "test:fort": "node tests/fort/acceptance.js",
+    "fort:perf": "node caravan/quests/fort3d/perf.js"
   },
   "devDependencies": {
-    "playwright": "1.63.0"
+    "@types/three": "0.187.0",
+    "esbuild": "0.25.12",
+    "playwright": "1.63.0",
+    "three": "0.187.0",
+    "typescript": "5.9.3"
   }
 }

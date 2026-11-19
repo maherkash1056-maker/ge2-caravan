@@ -26,5 +26,6 @@ studio/n8n2/
 studio/n8n3/
 studio/worker/
 studio/*.bak*.html
+caravan/quests/fort3d/dist/
 **/__pycache__/
 **/*.pyc

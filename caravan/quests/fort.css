@@ -5,6 +5,7 @@
 .fpill.fhp .bar{display:inline-block;width:110px;height:12px;background:#4a1a12;border:1px solid #d4a93c;border-radius:6px;overflow:hidden;vertical-align:middle}.fpill.fhp .bar b{display:block;height:100%;width:100%;background:#3ddc5a;transition:width .3s}
 .fstage{position:relative;border:3px solid #d4a93c;border-radius:14px;overflow:hidden;background:#0f3f44;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 #fcv{display:block;width:100%;height:38vh;min-height:190px}
+.fstage.is3d #fcv{visibility:hidden}.ftoast{pointer-events:none}.fstage.is3d .fvid{inset:auto 8px 8px auto;width:34%;height:auto;aspect-ratio:16/9;border:2px solid #d4a93c;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.35)}#fcv3d{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y;cursor:grab}#fcv3d:active{cursor:grabbing}
 .fside{position:absolute;left:8px;top:8px;width:78px;display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(15,63,68,.85);border:2px solid #d4a93c;border-radius:10px;padding:4px;color:#fbf4e3;font-size:11px;font-weight:800;text-align:center}
 .fside img{width:100%;border-radius:6px;display:block}.fside em{font-style:normal;color:#f2dc92;min-height:14px}
 .ftoast{position:absolute;left:50%;top:10px;transform:translateX(-50%);min-width:220px;max-width:92%;text-align:center;border:2px solid #d4a93c;border-radius:12px;padding:8px 14px;color:#fff;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.35);animation:fpop .25s ease-out}

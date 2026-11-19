@@ -28,6 +28,8 @@ const TESTS = [
   { id: "rally/content",       file: "tests/rally/content.test.js",        tier: "local", runner: "node-test", what: "docs/content.json in sync with rally3d/index.html + content invariants" },
   { id: "rally/acceptance",    file: "tests/rally/acceptance.js",          tier: "local", what: "19 scenarios on the shipped 3D page via its debug hooks: stops, photos, checkpoints, signs, radio, fuel, shop, finish, persistence" },
   { id: "rally/mobile",        file: "tests/rally/mobile.js",              tier: "local", what: "Pixel 7 / Galaxy S9+ touch pads, desktop keys, fps sample, fuel burn, driving into the first stop" },
+  // ---- Fort of Taqah 3D view (feat/fort-3d): the shipped fort.html with the WebGL view, its 2D fallback and touch/keyboard play.
+  { id: "fort/acceptance",     file: "tests/fort/acceptance.js",           tier: "local", what: "20 checks: 3D mount, shots/sinks/wall hits/cracks, keyboard T/F/N, shop + waves, orbit drag, finish + result hook, Pixel 7 touch, no-WebGL 2D fallback" },
   // ---- live: these open rooms on the PRODUCTION Durable Objects server (ge2-caravan-server). Never run without authorisation.
   { id: "games/snake",         file: "caravan/games/uitest_snake.js",      tier: "live",  what: "Wadi Snakes host + 3 phones against the production room server (creates a room)" },
   { id: "server/snaketest",    file: "caravan/server/snaketest.js",        tier: "live",  what: "Wadi Snakes bots against production (creates a room)" },
