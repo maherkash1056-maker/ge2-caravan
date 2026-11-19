@@ -12,7 +12,9 @@
     "test:smoke": "node tests/smoke_pages.js",
     "test:local": "node tests/run.js local",
     "test:live": "node tests/run.js live",
-    "test:all": "npm run test:syntax && node tests/run.js all"
+    "test:all": "npm run test:syntax && node tests/run.js all",
+    "test:rally": "node --test tests/rally/adapter.test.js tests/rally/content.test.js && node tests/rally/acceptance.js && node tests/rally/mobile.js",
+    "rally:content": "node caravan/rally/extract_content.js"
   },
   "devDependencies": {
     "playwright": "1.63.0"

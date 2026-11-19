@@ -23,6 +23,11 @@ const TESTS = [
   { id: "writing/uitest",      file: "caravan/writing/uitest_writing.js",  tier: "local", needs: "studio", what: "Studio: writing tab, photo upload, feedback render, result call" },
   { id: "games/dumpprompt",    file: "caravan/games/dumpprompt.js",        tier: "local", needs: "studio", what: "Studio: buildExamPrompt() runs and dumps the prompt" },
   { id: "smoke/pages",         file: "tests/smoke_pages.js",               tier: "local", needs: "studio", what: "Every slot page loads with no page error; all non-loopback requests blocked" },
+  // ---- Khareef Rally 3D (slot 9) contract tests — Phase 2B. The adapter/content tests are node:test files; the other two drive the shipped page.
+  { id: "rally/adapter",       file: "tests/rally/adapter.test.js",        tier: "local", runner: "node-test", what: "RALLY_BRIDGE contract: hash parsing, exam/bank/mine requests, result payload, grades, cadence rules" },
+  { id: "rally/content",       file: "tests/rally/content.test.js",        tier: "local", runner: "node-test", what: "docs/content.json in sync with rally3d/index.html + content invariants" },
+  { id: "rally/acceptance",    file: "tests/rally/acceptance.js",          tier: "local", what: "19 scenarios on the shipped 3D page via its debug hooks: stops, photos, checkpoints, signs, radio, fuel, shop, finish, persistence" },
+  { id: "rally/mobile",        file: "tests/rally/mobile.js",              tier: "local", what: "Pixel 7 / Galaxy S9+ touch pads, desktop keys, fps sample, fuel burn, driving into the first stop" },
   // ---- live: these open rooms on the PRODUCTION Durable Objects server (ge2-caravan-server). Never run without authorisation.
   { id: "games/snake",         file: "caravan/games/uitest_snake.js",      tier: "live",  what: "Wadi Snakes host + 3 phones against the production room server (creates a room)" },
   { id: "server/snaketest",    file: "caravan/server/snaketest.js",        tier: "live",  what: "Wadi Snakes bots against production (creates a room)" },
@@ -43,7 +48,8 @@ for (const t of sel) {
   else if (t.needs === "studio" && !fs.existsSync(P.STUDIO)) { verdict = "UNVERIFIED"; note = "Studio build missing — npm run build:studio"; }
   else {
     const t0 = Date.now();
-    const r = spawnSync(process.execPath, [path.join(P.ROOT, t.file)], { cwd: P.ROOT, timeout: TIMEOUT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, CARAVAN_OUT: P.OUT, CARAVAN_TMP: P.TMP } });
+    const args = t.runner === "node-test" ? ["--test", path.join(P.ROOT, t.file)] : [path.join(P.ROOT, t.file)];
+    const r = spawnSync(process.execPath, args, { cwd: P.ROOT, timeout: TIMEOUT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, CARAVAN_OUT: P.OUT, CARAVAN_TMP: P.TMP } });
     ms = Date.now() - t0;
     const out = (r.stdout || "") + (r.stderr || "");
     fs.writeFileSync(path.join(logs, t.id.replace(/\//g, "_") + ".log"), out);

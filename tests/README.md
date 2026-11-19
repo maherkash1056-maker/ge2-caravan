@@ -43,6 +43,8 @@ The existing scripts were written to be read by a person: they print what they s
 
 Helpers not run automatically: `caravan/games/validate40.js <exam.json>`.
 
+Khareef Rally 3D (slot 9): `npm run test:rally` runs `tests/rally/adapter.test.js` and `content.test.js` (node:test, no browser), then `acceptance.js` (19 scenarios on the shipped page through its own debug hooks, class server stubbed, textures served from `rally3d/tex_s`) and `mobile.js` (Pixel 7 / Galaxy S9+ emulation, keyboard, fps sample). All four are in the local tier of `tests/run.js`. See `caravan/rally/docs/TEST-PLAN.md`.
+
 `tests/smoke_pages.js` aborts every request that is not to 127.0.0.1 and lists the hosts each page tried to reach, so it cannot touch n8n, Supabase or Cloudflare. The older `uitest_*` scripts point the class-server URL at the local stub but do not block other outbound requests.
 
 ## Publishing (unchanged behaviour, portable paths)

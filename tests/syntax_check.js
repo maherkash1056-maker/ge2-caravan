@@ -14,7 +14,7 @@ const PAGES = [
   "rally3d/index.html", "rally3d/adapter.html",           // slot 9 source + adapter (teacher's folder)
 ].map(R).concat(fs.existsSync(P.STUDIO) ? [P.STUDIO] : []);
 const SCRIPTS = [];
-for (const d of ["caravan/games", "caravan/games/art", "caravan/quests", "caravan/quests/art", "caravan/project", "caravan/writing", "caravan/server", "caravan/api", "caravan/worker", "caravan/supa", "studio", "tests", "caravan"])
+for (const d of ["caravan/games", "caravan/games/art", "caravan/quests", "caravan/quests/art", "caravan/project", "caravan/writing", "caravan/server", "caravan/api", "caravan/worker", "caravan/supa", "studio", "tests", "tests/rally", "caravan", "caravan/rally"])
   for (const f of fs.readdirSync(R(d))) if (/\.(js|mjs)$/.test(f) && f !== "bugcatch.js") SCRIPTS.push(path.join(d, f));
 SCRIPTS.push("caravan/bugcatch.js"); // an HTML snippet: checked as an inline script below
 

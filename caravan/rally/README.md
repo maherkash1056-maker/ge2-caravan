@@ -13,6 +13,11 @@ on 2026-11-18 and a remastered generator for its asset worker.
 | `recovered/Slot-9-Khareef-Rally.html` | the live page as served on 2026-11-18, identical in the n8n "GE2 App" table (part 9) and the Cloudflare page store — the backup to compare against |
 | `recovered/MANIFEST.json` | sources, retrieval time, SHA-256 of every file |
 | `build_worker.py` | remastered generator: rebuilds `worker.mjs` (gitignored) for the texture worker from `rally3d/tex_s`, same paths, content types, CORS and the same listing answer for unknown paths; `--check` verifies hashes |
+| `docs/CONTRACT.md` | Phase 2B: the behaviour contract of the shipped game (bridge, session, questions, results, progress, gameplay, discrepancies, unverified) |
+| `docs/content.json` + `extract_content.js` | the educational content extracted verbatim from the bundle; `--check` guards sync |
+| `docs/TEST-PLAN.md` | acceptance tests (`tests/rally/`), desktop + Android QA matrix, performance and touch |
+| `docs/ARCHITECTURE.md` | preserve-vs-reconstruct list and the proposed TypeScript + three.js source layout with a 2D fallback |
+| `docs/RISKS.md` | localStorage-only progression, public PIN pepper, live debug hooks, and proposed solutions |
 | `check_slot9.py` | guard: accepts `build/outputs/Slot-9-Khareef-Rally.html` only if it is `rally3d/index.html`, the production backup, or another 3D build; refuses the 2D quest |
 
 ## How slot 9 talks to the platform
