@@ -7,7 +7,7 @@ export CARAVAN_OUT="${CARAVAN_OUT:-$(cd "$HERE/.." && pwd)/build/outputs}"
 python3 - <<'PY'
 import json,os
 O=os.environ["CARAVAN_OUT"]; os.makedirs("files",exist_ok=True)
-names={1:"GE2-Game-Studio-CLASS-n8n.html",2:"Class-Game-2-Two-Windows-Ajnan.html",3:"Class-Game-3-2-Legends-Wijdan-Khlood.html",4:"Slot-4-Word-Royale-HOST.html",5:"Slot-5-Word-Royale-PLAYER.html",6:"Slot-6-Wadi-Snakes-PLAYER.html",7:"Slot-7-Wadi-Snakes-HOST.html",8:"Slot-8-Fort-of-Taqah.html",9:"Slot-9-Khareef-Rally.html",10:"Slot-10-Dhow-to-Zanzibar.html",11:"Slot-11-Brew-Haha.html"}
+names={1:"GE2-Game-Studio-CLASS-n8n.html",2:"Class-Game-2-Two-Windows-Ajnan.html",3:"Class-Game-3-2-Legends-Wijdan-Khlood.html",4:"Slot-4-Word-Royale-HOST.html",5:"Slot-5-Word-Royale-PLAYER.html",6:"Slot-6-Wadi-Snakes-PLAYER.html",7:"Slot-7-Wadi-Snakes-HOST.html",8:"Slot-8-Fort-of-Taqah.html",9:"Slot-9-Khareef-Rally.html",10:"Slot-10-Dhow-to-Zanzibar.html",11:"Slot-11-Brew-Haha.html",12:"Slot-12-Big-Shopping-Run.html"}
 slots={k:os.path.join(O,v) for k,v in names.items()}
 BUG=open('bugcatch.js',encoding='utf-8').read().strip()
 def inject(h):

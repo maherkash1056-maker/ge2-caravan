@@ -14,7 +14,9 @@
     "test:live": "node tests/run.js live",
     "test:all": "npm run test:syntax && node tests/run.js all",
     "test:rally": "node --test tests/rally/adapter.test.js tests/rally/content.test.js && node tests/rally/acceptance.js && node tests/rally/mobile.js",
-    "rally:content": "node caravan/rally/extract_content.js"
+    "rally:content": "node caravan/rally/extract_content.js",
+    "build:shopping": "python3 caravan/games/shopping/build.py",
+    "test:shopping": "node tests/shopping/acceptance.js"
   },
   "devDependencies": {
     "playwright": "1.63.0"

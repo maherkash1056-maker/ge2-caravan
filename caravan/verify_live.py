@@ -11,7 +11,7 @@ else:
   if not c: sys.exit('verify_live.py: pass the n8n get_data_table_rows JSON file as the first argument (no saved export found)')
   f=c[-1]
 d=json.load(open(f))
-files={1:'GE2-Game-Studio-CLASS-n8n.html',2:'Class-Game-2-Two-Windows-Ajnan.html',3:'Class-Game-3-2-Legends-Wijdan-Khlood.html',4:'Slot-4-Word-Royale-HOST.html',5:'Slot-5-Word-Royale-PLAYER.html',6:'Slot-6-Wadi-Snakes-PLAYER.html',7:'Slot-7-Wadi-Snakes-HOST.html',8:'Slot-8-Fort-of-Taqah.html',9:'Slot-9-Khareef-Rally.html',10:'Slot-10-Dhow-to-Zanzibar.html',11:'Slot-11-Brew-Haha.html'}
+files={1:'GE2-Game-Studio-CLASS-n8n.html',2:'Class-Game-2-Two-Windows-Ajnan.html',3:'Class-Game-3-2-Legends-Wijdan-Khlood.html',4:'Slot-4-Word-Royale-HOST.html',5:'Slot-5-Word-Royale-PLAYER.html',6:'Slot-6-Wadi-Snakes-PLAYER.html',7:'Slot-7-Wadi-Snakes-HOST.html',8:'Slot-8-Fort-of-Taqah.html',9:'Slot-9-Khareef-Rally.html',10:'Slot-10-Dhow-to-Zanzibar.html',11:'Slot-11-Brew-Haha.html',12:'Slot-12-Big-Shopping-Run.html'}
 for r in sorted(d['rows'],key=lambda r:r['part']):
   if r['part'] not in files: continue
   h=r['html'] or ''; fp=os.path.join(OUT,files[r['part']])

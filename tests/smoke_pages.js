@@ -44,6 +44,7 @@ const PAGES = [
   { slot: 9, name: "rally",        url: "/caravan/quests/rally.html#play&s=" + S,         vp: [860, 400], expect: "#app" },
   { slot: 10, name: "dhow",        url: "/caravan/quests/dhow.html#play&s=" + S,          vp: [400, 820], expect: "#app" },
   { slot: 11, name: "brew_haha",   url: null, note: "no page source in the repo: slot 11 is built elsewhere (publish.sh reads Slot-11-Brew-Haha.html from CARAVAN_OUT)" },
+  { slot: 12, name: "shopping_run", url: "/caravan/games/shopping.html#play&s=" + S, vp: [960, 540], expect: "#gl" },
   { slot: "gallery", name: "gallery", url: "/caravan/gallery/index.html",                 vp: [1024, 768], expect: "#stage" },
 ];
 (async () => {
