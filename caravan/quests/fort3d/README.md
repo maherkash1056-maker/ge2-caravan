@@ -1,4 +1,4 @@
-# Fort of Taqah — 3D view (`feat/fort-3d`)
+# Fort of Taqah — 3D view (`feat/fort-3d`) and 3D adventure (`feat/fort-3d-adventure`)
 
 The Fort of Taqah quest (slot page `caravan/quests/fort.html`) now renders its stage as a real-time 3D scene: the fort on
 its headland, an animated sea, raider dhows that sail in on three lanes, the rampart cannon that turns toward the raider
@@ -81,3 +81,31 @@ automatically on machines reporting ≤ 2 CPU cores.
    corner of the stage (headless Chromium showed a dark rectangle mirrored at the top-right while the clip played — a
    software-compositing artifact to confirm absent on a real GPU); drag / wheel on the stage; T / F / N keys.
 4. Open the same URL with Chrome's `--disable-webgl` flag to see the unchanged 2D fallback.
+
+## Adventure mode (`fort_adventure.html`, branch `feat/fort-3d-adventure`)
+
+A first-person version of the same game. `caravan/quests/build.py` builds `fort_adventure.html` from the same sources
+with `window.FORT_MODE="adventure"`; `fort.js` then mounts `AdventureView` instead of the stage view and binds the
+station glue (`advBind` / `advCard` / `advLane` / `advFront` at the end of `fort.js`). The classic 2D page and the
+3D stage page are untouched fallbacks.
+
+| Module | What |
+|---|---|
+| `src/colliders.ts` | axis-aligned solid boxes; per-axis movement with step-up (stairs), ground snapping, head bumps |
+| `src/player.ts` | first-person controller: WASD/arrows, Shift run, Space jump, E interact, pointer-lock mouse look; touch: left joystick, right-half drag look, ✋ button |
+| `src/world.ts` | the walkable fort: courtyard, stone staircase to the rampart, parapets, hollow keep with the reading room, market stall, well, boundaries, three cannon stations, station markers and prompts |
+| `src/adventure.ts` | the view: player stepping (fixed 60 Hz sub-steps), station proximity → `onStation` / `onInteract`, raiders / shots / hits from `F`, `tick(dt, n)` for deterministic tests, `debug()` |
+
+Rules in adventure mode (everything else is unchanged `fort.js`):
+* The question card is only usable **at a cannon**; the west / middle / east cannon answers the raiders of its own lane.
+  `pick()` selects the front raider of that lane. With no raider left in the lane the card says so.
+* While the student stands at a cannon the raiders **hold position** (`F.hold`); the time pressure is the walk between
+  cannons and the stairs. (Rule added for the adventure — flagged for the teacher's approval.)
+* The text on the wall can be read at any cannon (it stays beside the question, as in the original), in the keep's
+  reading room (station, no answer buttons) and anywhere with the 📖 Text button. The reading check before the game and
+  the highlight questions are unchanged (`Caravan.reader`).
+* Shop between waves, badges, result report: unchanged, they still appear as overlays.
+
+Tests: `node tests/fort/adventure.js` — 24 checks (mount, gravity, walk/run/strafe, wall + keep collisions, doorway,
+staircase climb, rampart parapets, jump, real key events, mouse look + pitch clamp, station prompts, lane-locked cannons,
+firing, reading room, 📖 toggle, Pixel 7 landscape joystick + look drag, no-WebGL fallback to the classic page).

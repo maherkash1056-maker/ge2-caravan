@@ -10,7 +10,7 @@ export class FortScene {
   private readonly container: HTMLElement;
   private readonly low: boolean;
 
-  constructor(container: HTMLElement, low: boolean) {
+  constructor(container: HTMLElement, low: boolean, fov = 42, near = 0.5) {
     this.container = container; this.low = low;
     this.canvas = document.createElement("canvas"); this.canvas.id = "fcv3d"; this.canvas.setAttribute("aria-hidden", "true");
     this.canvas.style.cssText = "display:block;width:100%;height:100%;touch-action:none";
@@ -18,7 +18,7 @@ export class FortScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? 1 : 1.5));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = !low; this.renderer.shadowMap.type = THREE.PCFShadowMap;
-    this.camera = new THREE.PerspectiveCamera(42, 1, 0.5, 900);
+    this.camera = new THREE.PerspectiveCamera(fov, 1, near, 900);
     // late-afternoon khareef light: warm sun low over the sea, cool mist in the distance
     this.scene.background = new THREE.Color(0xd9c3a0);
     this.scene.fog = new THREE.Fog(0xdcc6a4, 140, 520);

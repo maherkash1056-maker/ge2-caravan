@@ -6,6 +6,7 @@ import { Fort } from "./fort";
 import { Ships, WALL } from "./ships";
 import { Effects } from "./effects";
 import { Orbit } from "./input";
+import { AdventureView } from "./adventure";
 import type { FortState, FortView, MountOptions } from "./types";
 
 // Fort of Taqah — the 3D presentation. fort.js owns every rule; this module only reads its state object each frame:
@@ -55,7 +56,7 @@ class View implements FortView {
 
 const api = {
   available: webglOk,
-  mount(container: HTMLElement, opts: MountOptions = {}): FortView | null { try { if (!webglOk()) return null; const v = new View(container, opts); (window as any).__fortView = v; return v; } catch (e) { console.warn("FortView3D failed, using 2D", e); return null; } },
+  mount(container: HTMLElement, opts: MountOptions = {}): FortView | null { try { if (!webglOk()) return null; const v = opts.mode === "adventure" ? new AdventureView(container, opts) : new View(container, opts); (window as any).__fortView = v; return v; } catch (e) { console.warn("FortView3D failed, using 2D", e); return null; } },
   WALL,
 };
 (window as any).FortView3D = api;

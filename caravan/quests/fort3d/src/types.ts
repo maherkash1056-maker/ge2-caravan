@@ -21,7 +21,7 @@ export interface FortState {
   paused?: boolean;
   fort: [string, string, string];
 }
-export interface MountOptions { fort?: string; hero?: string; quality?: "high" | "low" }
+export interface MountOptions { fort?: string; hero?: string; quality?: "high" | "low"; mode?: "stage" | "adventure"; touch?: boolean }
 export interface FortView {
   update(now: number, state: FortState): void;
   resize(): void;

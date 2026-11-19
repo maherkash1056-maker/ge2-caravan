@@ -47,3 +47,10 @@ export class Mats {
   readonly ball = new THREE.MeshStandardMaterial({ color: 0x1a1612, roughness: 0.6, metalness: 0.3 });
   readonly shield = new THREE.MeshBasicMaterial({ color: 0x7fd3ff, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false });
 }
+
+// Scale a BoxGeometry's UVs so each face tiles the texture every `metres` metres (box faces otherwise map 0..1).
+export function boxUV(geo: THREE.BoxGeometry, w: number, h: number, d: number, metres = 2): THREE.BoxGeometry {
+  const uv = geo.attributes.uv as THREE.BufferAttribute; const faces = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]]; // +x -x +y -y +z -z
+  for (let f = 0; f < 6; f++) { const [fw, fh] = faces[f]; for (let i = f * 4; i < f * 4 + 4; i++) uv.setXY(i, uv.getX(i) * fw / metres, uv.getY(i) * fh / metres); }
+  uv.needsUpdate = true; return geo;
+}

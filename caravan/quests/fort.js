@@ -17,7 +17,19 @@ async function start(){try{await loadExam({skills:["r_tfng","r_abc"],n:18,mix:{r
 let cv,cx,W=0,H=0;const BG=new Image();
 /* 3D view (caravan/quests/fort3d, inlined by build.py as window.FortView3D). It only reads F each frame; every rule stays here.
    Without WebGL (or if the module is absent) the painted 2D canvas below is used unchanged. */
-function view3d(){view3dOff();F.view=null;try{if(window.FortView3D&&FortView3D.available()){F.view=FortView3D.mount($(".fstage"),{hero:F.hero,fort:F.fort[0]});if(F.view)$(".fstage").classList.add("is3d");}}catch(e){F.view=null;}}
+function view3d(){view3dOff();F.view=null;try{if(window.FortView3D&&FortView3D.available()){const adv=window.FORT_MODE==="adventure";F.view=FortView3D.mount($(".fstage"),{hero:F.hero,fort:F.fort[0],mode:adv?"adventure":"stage"});if(F.view){$(".fstage").classList.add("is3d");if(adv){document.body.classList.add("fadv");advBind();}}}}catch(e){F.view=null;}}
+/* ---- adventure mode glue (fort_adventure.html). The question card is only usable at a cannon, and each cannon answers the raiders
+   of its own lane (west / middle / east). While the student stands at a cannon the raiders hold position (F.hold); the time
+   pressure is the walk between cannons. The text on the wall is readable at any cannon, in the keep's reading room, or with the
+   📖 button. Every rule (answer, tally, damage, combo, shield, shop, badges, result) stays in the functions above. */
+function advLane(){const s=F.advStation;return s&&/^cannon\d$/.test(s)?+s.slice(6):-1;}
+function advFront(lane){return F.raiders.filter(r=>!r.gone&&r.lane===lane).sort((a,b)=>a.x-b.x)[0]||null;}
+function advBind(){const v=F.view;if(!v||!("onStation" in v))return;F.adv=true;F.advStation=null;F.advPinned=false;F.hold=false;
+ const tog=document.createElement("button");tog.id="fqtoggle";tog.type="button";tog.textContent="📖 Text";tog.title="Show / hide the text on the wall";tog.onclick=()=>{F.advPinned=!F.advPinned;advCard();};document.body.appendChild(tog);
+ v.onStation=s=>{F.advStation=s?s.id:null;advCard();};v.onInteract=s=>{if(s.id==="shop")toast("ok","🛒 The fort shop","opens by itself after every wave you hold",1800);else if(s.id==="lookout")toast("ok","🔭 Lookout","watch the raiders come across the bay",1600);else if(s.id==="reading"){F.advPinned=!F.advPinned;advCard();}};advCard();}
+function advCard(){if(!F.adv)return;const card=$("#fqcard");if(!card)return;const lane=advLane();pick();
+ if(lane>=0){F.hold=true;$("#fopts").hidden=!F.cur;card.classList.remove("hid");}
+ else{F.hold=false;$("#fopts").hidden=true;card.classList.toggle("hid",!(F.advStation==="reading"||F.advPinned));}}
 function view3dOff(){if(F.view){try{F.view.dispose();}catch(e){}F.view=null;}}
 function keys(){if(F.keys)return;F.keys=true;addEventListener("keydown",e=>{if(e.repeat||e.altKey||e.ctrlKey||e.metaKey||!$("#fopts")||document.querySelector(".qov,.cv-ovl"))return;const m={t:0,f:1,n:2,"1":0,"2":1,"3":2}[e.key.toLowerCase()];if(m===undefined)return;e.preventDefault();answer(m);});}
 function clip(kind){const v=$("#fvid");if(!v)return;const src=kind==="ok"?ART.okv:ART.badv;if(!src)return;try{if(v.dataset.k!==kind){v.src=src;v.dataset.k=kind;}v.currentTime=0;v.hidden=false;const pr=v.play();if(pr&&pr.catch)pr.catch(()=>{v.hidden=true;});}catch(e){v.hidden=true;}}function size(){cv=$("#fcv");if(!cv)return;const r=Math.min(2,devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*r;cv.height=H*r;cx=cv.getContext("2d");cx.setTransform(r,0,0,r,0,0);}
@@ -31,7 +43,7 @@ function startWave(){const w=F.waves[F.wave];const slow=F.perk.falaj?0.7:1;F.rai
 function boostQuestion(q){F.paused=true;const d=document.createElement("div");d.className="qov";d.innerHTML='<div class="card fboost"><p class="lab" style="margin:0 0 6px">🛡️ Defence boost — '+HEROES.guardian.name+'</p><p class="q">'+esc(q.q)+'</p>'+q.o.map((o,i)=>'<button class="opt" data-b="'+i+'"><b>'+"ABC"[i]+'</b><span>'+esc(o)+'</span></button>').join("")+'<p class="hint" id="fbmsg" style="min-height:20px"></p></div>';document.body.appendChild(d);
   d.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{const ok=+b.dataset.b===q.a;tally(q,ok);d.querySelectorAll("[data-b]").forEach(x=>x.disabled=true);$("#fbmsg").textContent=ok?"✅ Correct! Defense boost — a shield protects the wall from one hit. "+(q.why||""):"❌ The answer was "+"ABC"[q.a]+". No shield this wave. "+(q.why||"");if(ok){F.shield=1;toast("ok","✅ Correct! Defense Boost!","A shield absorbs the next hit",2200);}setTimeout(()=>{d.remove();F.paused=false;F.last=performance.now();hud();pick();},2200);});}
 function front(){return F.raiders.filter(r=>!r.gone).sort((a,b)=>a.x-b.x)[0]||null;}
-function pick(){const r=front();F.cur=r;document.querySelectorAll(".fbtn button").forEach(b=>b.disabled=!r);if(!r)return;$("#fl").textContent="📖 Raider "+r.n+" ⛵";$("#fs").textContent=r.q.q;$("#fh").textContent=F.perk.lookout&&r.q.p?"🔭 Lookout: look in paragraph "+r.q.p:(F.perk.lookout?"🔭 Lookout: not in one clear place":"");}
+function pick(){const lane=F.adv?advLane():-1;const r=lane>=0?advFront(lane):front();F.cur=r;document.querySelectorAll(".fbtn button").forEach(b=>b.disabled=!r);if(!r){if(lane>=0){$("#fl").textContent="⛵ No raider in this lane";$("#fs").textContent="Go to another cannon — the raiders of the other lanes are still coming.";$("#fh").textContent="";}return;}$("#fl").textContent="📖 Raider "+r.n+" ⛵";$("#fs").textContent=r.q.q;$("#fh").textContent=F.perk.lookout&&r.q.p?"🔭 Lookout: look in paragraph "+r.q.p:(F.perk.lookout?"🔭 Lookout: not in one clear place":"");}
 function damage(){const d=F.hero==="guardian"?14:18;if(F.shield>0){F.shield--;toast("ok","🛡️ Shield!","The hit was absorbed",1600);return 0;}F.wall-=d;F.hit=performance.now();clip("bad");return d;}
 function answer(v){const r=F.cur;if(!r||r.gone||F.over||F.paused)return;const ok=v===r.q.a;tally(r.q,ok);r.gone=true;
   if(ok){clip("ok");F.combo++;const mult=F.hero==="commander"?Math.min(3,F.combo):1;const gain=50*mult;F.coins+=gain;F.shots.push({x:r.x,lane:r.lane,t:performance.now()});
@@ -46,7 +58,7 @@ function shop(){cancelAnimationFrame(F.raf);const d=document.createElement("div"
     d.querySelectorAll("[data-it]").forEach(b=>b.onclick=()=>{const it=items.find(x=>x[0]===b.dataset.it);if(F.coins<it[3])return;F.coins-=it[3];if(it[0]==="repair")F.wall=Math.min(100,F.wall+30);else F.perk[it[0]]=true;draw();});
     d.querySelector("[data-go]").onclick=()=>{d.remove();const look=F.perk.lookout;startWave();F.perk.lookout=look;pick();F.raf=requestAnimationFrame(loop);};};
   F.perk.lookout=false;draw();document.body.appendChild(d);}
-function loop(now){F.raf=requestAnimationFrame(loop);const dt=F.paused?0:Math.min(.1,(now-F.last)/1000);F.last=now;
+function loop(now){F.raf=requestAnimationFrame(loop);const dt=(F.paused||F.hold)?0:Math.min(.1,(now-F.last)/1000);F.last=now;
   for(const r of F.raiders){if(r.gone)continue;r.x-=r.spd*dt;if(r.x<=0){r.gone=true;tally(r.q,false);F.combo=0;const d=damage();toast("bad","⚔️ Raider "+r.n+" reached the wall!",d?"−"+d+" Fort Health · the answer was "+r.q.o[r.q.a]:"the answer was "+r.q.o[r.q.a],2400);hud();if(F.cur===r)pick();}}
   if(F.cur&&F.cur.gone)pick();if(!F.cur&&!F.paused)pick();if(F.view){F.shots=F.shots.filter(s=>now-s.t<700);F.view.update(now,F);raiderStrip();}else draw(now);check();}
 const SHIP_POS=[[.74,.40],[.90,.44],[.62,.47],[.84,.52],[.70,.56]];   // where the enemy ships sit in the artwork (fractions of the canvas)
