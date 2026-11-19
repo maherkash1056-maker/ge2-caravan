@@ -28,6 +28,7 @@ const TESTS = [
   { id: "rally/content",       file: "tests/rally/content.test.js",        tier: "local", runner: "node-test", what: "docs/content.json in sync with rally3d/index.html + content invariants" },
   { id: "rally/acceptance",    file: "tests/rally/acceptance.js",          tier: "local", what: "19 scenarios on the shipped 3D page via its debug hooks: stops, photos, checkpoints, signs, radio, fuel, shop, finish, persistence" },
   { id: "rally/mobile",        file: "tests/rally/mobile.js",              tier: "local", what: "Pixel 7 / Galaxy S9+ touch pads, desktop keys, fps sample, fuel burn, driving into the first stop" },
+  { id: "rally/gfx",           file: "tests/rally/gfx.js",                 tier: "local", what: "graphics layer: tiers by hash, button/G/F, adaptive step-down, no-WebGL message" },
   // ---- live: these open rooms on the PRODUCTION Durable Objects server (ge2-caravan-server). Never run without authorisation.
   { id: "games/snake",         file: "caravan/games/uitest_snake.js",      tier: "live",  what: "Wadi Snakes host + 3 phones against the production room server (creates a room)" },
   { id: "server/snaketest",    file: "caravan/server/snaketest.js",        tier: "live",  what: "Wadi Snakes bots against production (creates a room)" },
