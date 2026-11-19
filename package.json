@@ -16,7 +16,8 @@
     "test:rally": "node --test tests/rally/adapter.test.js tests/rally/content.test.js && node caravan/rally/build_page.js --check && node tests/rally/acceptance.js && node tests/rally/mobile.js && node tests/rally/gfx.js",
     "rally:content": "node caravan/rally/extract_content.js",
     "rally:build": "node caravan/rally/build_page.js",
-    "rally:profile": "node caravan/rally/perf/profile.js"
+    "rally:profile": "node caravan/rally/perf/profile.js",
+    "rally:visual": "node caravan/rally/perf/visual.js"
   },
   "devDependencies": {
     "playwright": "1.63.0"

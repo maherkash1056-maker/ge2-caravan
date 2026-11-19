@@ -72,14 +72,15 @@
     updateButton(); return true;
   }
   // --- frame timing + adaptive control (wraps the game's render(), which the loop calls once per frame)
-  var frames = 0, last = 0, ema = 0, slowSince = 0, fastSince = 0, fpsN = 0, fpsT = 0, attachedAt = 0;
+  var frames = 0, last = 0, ema = 0, slowSince = 0, fastSince = 0, fpsN = 0, fpsT = 0, attachedAt = 0, visChanged = -1e9;
   function wrapRender(g) {
     if (g.__gfxWrapped) return; g.__gfxWrapped = true; var orig = g.render.bind(g);
     g.render = function () {
       var now = performance.now(); frames++;
       var t = TIERS[cur]; if (t.shadowEvery > 1 && g.renderer.shadowMap.enabled) g.renderer.shadowMap.needsUpdate = (frames % t.shadowEvery) === 0;
       orig();
-      if (last) { var dt = now - last; if (dt < 4000) { ema = ema ? ema * 0.9 + dt * 0.1 : dt; G.stats.ms = +ema.toFixed(1); fpsN++; fpsT += dt; if (fpsT >= 1000) { G.stats.fps = Math.round(fpsN * 1000 / fpsT); fpsN = 0; fpsT = 0; var inf = g.renderer.info; G.stats.calls = inf.render.calls; G.stats.tris = inf.render.triangles; if (G.debug) drawStats(); } } }
+      // a long gap counts as a slow frame unless the tab changed visibility during it
+      if (last) { var dt = now - last; if (dt < 4000 || now - visChanged > dt) { dt = Math.min(dt, 4000); ema = ema ? ema * 0.9 + dt * 0.1 : dt; G.stats.ms = +ema.toFixed(1); fpsN++; fpsT += dt; if (fpsT >= 1000) { G.stats.fps = Math.round(fpsN * 1000 / fpsT); fpsN = 0; fpsT = 0; var inf = g.renderer.info; G.stats.calls = inf.render.calls; G.stats.tris = inf.render.triangles; if (G.debug) drawStats(); } } }
       last = now;
       if (G.auto && g.active && !(window.__quiz && window.__quiz.modal) && attachedAt && now - attachedAt > 2000) adapt(now);
     };
@@ -106,14 +107,138 @@
       addEventListener("keydown", function (e) { if (!g.active || (window.__quiz && window.__quiz.modal)) return; if (e.code === "KeyG" && !e.repeat) cycle(); if (e.code === "KeyF" && !e.repeat) { G.debug = !G.debug; drawStats(); } });
     } catch (e) { }
   }
+  // --- geometry merging (second performance commit)
+  // Measured: ~1 280 of the 2 650 draw calls were the nine vehicles (130–160 meshes each: chrome trim, bolts, lamps), the rest
+  // small static meshes (buildings, arches, signs, palms, dhows, terrain and road tiles). Two passes:
+  //  * static: meshes sharing material, shadow flags and vertex layout are merged per 150 m cell into one mesh with world
+  //    transforms baked in (culling stays per cell). Excluded by evidence from the bundle: anything marked
+  //    userData.animate/setOpen/wave/clips/camel (gates, barriers, flags, stones, roadworks, camels), the sea and waterfall
+  //    shaders, skid marks and particles (frustumCulled=false), instanced scenery, the player and traffic.
+  //  * vehicles: parts are merged per material in the vehicle's own space and re-attached to the root, so the car still moves;
+  //    wheel, steer and spin groups are separate owners, so wheels still bounce, steer and spin. Light materials are shared, so
+  //    brake / reverse / hazard emissive changes still apply.
+  var MERGE = hash.merge !== "0", CELL = 150;
+  function isDynamic(o) { var u = o.userData; return !!(u && (u.animate || u.setOpen || u.wave || u.clips || u.camel || u.uniforms)); }
+  function inv3t(e) { // inverse-transpose of the upper 3x3 of a column-major 4x4 → normal matrix (row-major 3x3 array)
+    var a = e[0], b = e[4], c = e[8], d = e[1], f = e[5], g = e[9], h = e[2], i = e[6], j = e[10];
+    var A = f * j - g * i, B = -(d * j - g * h), C = d * i - f * h, det = a * A + b * B + c * C; if (!det) det = 1e-9; var s = 1 / det;
+    return [A * s, B * s, C * s, (c * i - b * j) * s, (a * j - c * h) * s, -(a * i - b * h) * s, (b * g - c * f) * s, -(a * g - c * d) * s, (a * f - b * d) * s];
+  }
+  function det3(e) { return e[0] * (e[5] * e[10] - e[6] * e[9]) - e[4] * (e[1] * e[10] - e[2] * e[9]) + e[8] * (e[1] * e[6] - e[2] * e[5]); }
+  function mergeable(o, stats) {
+    var m = o.material, geo = o.geometry;
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || o.isSprite || o.isPoints || o.isLine || o.frustumCulled === false || (o.morphTargetInfluences && o.morphTargetInfluences.length)) return null;
+    if (!m || Array.isArray(m)) { stats.skipped["multi-material"] = (stats.skipped["multi-material"] || 0) + 1; return null; }
+    if (m.isShaderMaterial || m.isRawShaderMaterial) { stats.skipped.shader = (stats.skipped.shader || 0) + 1; return null; }
+    if (!geo || !geo.attributes.position) return null;
+    var names = Object.keys(geo.attributes).sort(), sig = [];
+    for (var i = 0; i < names.length; i++) { var a = geo.attributes[names[i]]; if (a.isInterleavedBufferAttribute || a.isInstancedBufferAttribute) { stats.skipped.interleaved = (stats.skipped.interleaved || 0) + 1; return null; } sig.push(names[i] + ":" + a.itemSize + (a.normalized ? "n" : "")); }
+    return [m.uuid, o.castShadow ? 1 : 0, o.receiveShadow ? 1 : 0, o.renderOrder, sig.join(",")].join("|");
+  }
+  var attrClassCache = null;
+  function attrClass(attr) {
+    if (attrClassCache) return attrClassCache;
+    var c = attr.constructor; while (c && c !== Function.prototype) { try { var t = new c(new Uint32Array(3), 1); if (t && t.isBufferAttribute && t.array instanceof Uint32Array && t.itemSize === 1) { attrClassCache = c; return c; } } catch (e) { } var n = Object.getPrototypeOf(c); if (!n || n === Function.prototype) break; c = n; }
+    throw new Error("no BufferAttribute class found");
+  }
+  // merge `list` (same material/flags/layout); elementsOf(o) gives the 4x4 (column-major) placing o into the parent's space
+  function buildMerged(list, elementsOf, parent, label, stats) {
+    var first = list[0], fg = first.geometry, names = Object.keys(fg.attributes), totalV = 0, totalI = 0;
+    list.forEach(function (o) { var p = o.geometry.attributes.position; totalV += p.count; totalI += o.geometry.index ? o.geometry.index.count : p.count; });
+    if (totalV > 1500000) { stats.skipped["too-big"] = (stats.skipped["too-big"] || 0) + 1; return null; }
+    var out = {}; names.forEach(function (nm) { var a = fg.attributes[nm]; out[nm] = { arr: new Float32Array(totalV * a.itemSize), size: a.itemSize, norm: a.normalized, ctor: a.constructor }; });
+    var index = new Uint32Array(totalI), vOff = 0, iOff = 0;
+    list.forEach(function (o) {
+      var geo = o.geometry, e = elementsOf(o), nm3 = inv3t(e), flip = det3(e) < 0, p = geo.attributes.position, cnt = p.count;
+      names.forEach(function (nm) {
+        var a = geo.attributes[nm], dst = out[nm].arr, sz = out[nm].size;
+        for (var k = 0; k < cnt; k++) {
+          var x = a.getX(k), y = sz > 1 ? a.getY(k) : 0, z = sz > 2 ? a.getZ(k) : 0, j = (vOff + k) * sz;
+          if (nm === "position") { dst[j] = e[0] * x + e[4] * y + e[8] * z + e[12]; dst[j + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; dst[j + 2] = e[2] * x + e[6] * y + e[10] * z + e[14]; }
+          else if (nm === "normal") { var nx = nm3[0] * x + nm3[3] * y + nm3[6] * z, ny = nm3[1] * x + nm3[4] * y + nm3[7] * z, nz = nm3[2] * x + nm3[5] * y + nm3[8] * z, l = Math.hypot(nx, ny, nz) || 1; dst[j] = nx / l; dst[j + 1] = ny / l; dst[j + 2] = nz / l; }
+          else { dst[j] = x; if (sz > 1) dst[j + 1] = y; if (sz > 2) dst[j + 2] = z; if (sz > 3) dst[j + 3] = a.getW(k); }
+        }
+      });
+      var ic = geo.index ? geo.index.count : cnt;
+      for (var t = 0; t < ic; t += 3) { var i0 = geo.index ? geo.index.getX(t) : t, i1 = geo.index ? geo.index.getX(t + 1) : t + 1, i2 = geo.index ? geo.index.getX(t + 2) : t + 2; if (flip) { var tmp = i1; i1 = i2; i2 = tmp; } index[iOff + t] = vOff + i0; index[iOff + t + 1] = vOff + i1; index[iOff + t + 2] = vOff + i2; }
+      vOff += cnt; iOff += ic;
+    });
+    // attributes must be plain BufferAttributes over our typed arrays: typed subclasses (Float32BufferAttribute) would convert
+    // the Uint32 index to floats, and the top of the chain is EventDispatcher. Find the class by trial, once.
+    var AttrCtor = attrClass(fg.attributes.position);
+    var geo2 = new fg.constructor(); names.forEach(function (nm) { geo2.setAttribute(nm, new AttrCtor(out[nm].arr, out[nm].size, out[nm].norm)); });
+    geo2.setIndex(new AttrCtor(index, 1)); geo2.computeBoundingSphere(); geo2.computeBoundingBox();
+    var mesh = new first.constructor(geo2, first.material); mesh.castShadow = first.castShadow; mesh.receiveShadow = first.receiveShadow; mesh.renderOrder = first.renderOrder; mesh.name = label + "_" + (first.material.name || "mat"); mesh.userData.mergedFrom = list.length;
+    parent.add(mesh); list.forEach(function (o) { o.visible = false; o.userData.mergedInto = mesh; });
+    stats.meshesMerged += list.length; stats.groups++; stats.vertices += totalV; return mesh;
+  }
+  function vehicleRoots(g) { var r = []; if (g.player && g.player.vehicle) r.push(g.player.vehicle.root); ((base && base.traffic) || g.traffic || []).forEach(function (c) { r.push(c.v.root); }); return r; }
+  function mergeStatic(g) {
+    var S = g.scene, t0 = performance.now(), stats = G.merge = { enabled: MERGE, meshesMerged: 0, groups: 0, candidates: 0, singles: 0, vertices: 0, ms: 0, skipped: {} };
+    if (!MERGE) return stats;
+    var ex = new Set(); var w = g.world || {};
+    [w.scatter && w.scatter.root, w.rails, w.sea, w.waterfall && (w.waterfall.mesh || w.waterfall.obj || w.waterfall)].forEach(function (o) { if (o && o.isObject3D) ex.add(o); });
+    vehicleRoots(g).forEach(function (r) { ex.add(r); }); (w.camels || []).forEach(function (c) { ex.add(c.obj); });
+    var groups = new Map();
+    (function walk(o, excluded) {
+      if (ex.has(o) || isDynamic(o) || o.visible === false) excluded = true;
+      if (!excluded && o.isMesh) { stats.candidates++; var k = mergeable(o, stats); if (k) { o.updateWorldMatrix(true, false); var e = o.matrixWorld.elements; k += "|" + Math.floor(e[12] / CELL) + "|" + Math.floor(e[14] / CELL); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(o); } }
+      for (var i = 0; i < o.children.length; i++) walk(o.children[i], excluded);
+    })(S, false);
+    var n = 0; groups.forEach(function (list) { if (list.length < 2) { stats.singles++; return; } buildMerged(list, function (o) { return o.matrixWorld.elements; }, S, "Merged_" + (n++), stats); });
+    stats.ms = Math.round(performance.now() - t0); G.log.push("merged " + stats.meshesMerged + " static meshes into " + stats.groups + " (" + stats.ms + " ms)"); return stats;
+  }
+  var ownerName = function (o) { var nm = o.name || ""; return nm.indexOf("Wheel") === 0 || nm === "Steer" || nm === "Spin"; };
+  function mergeVehicle(g, root) {
+    var stats = G.vehicles = G.vehicles || { enabled: MERGE, vehicles: 0, meshesMerged: 0, groups: 0, vertices: 0, ms: 0, skipped: {} };
+    if (!MERGE || !root || root.userData.gfxMerged) return stats; var t0 = performance.now(); root.updateWorldMatrix(true, true);
+    var groups = new Map();
+    (function walk(o, owner, excluded) {
+      if (o !== root && ownerName(o)) owner = o;
+      if (isDynamic(o) || o.visible === false) excluded = true;
+      if (!excluded && o.isMesh && o !== root) { var k = mergeable(o, stats); if (k) { k = owner.uuid + "|" + k; if (!groups.has(k)) groups.set(k, { owner: owner, list: [] }); groups.get(k).list.push(o); } }
+      for (var i = 0; i < o.children.length; i++) walk(o.children[i], owner, excluded);
+    })(root, root, false);
+    var n = 0; groups.forEach(function (gr) {
+      if (gr.list.length < 2) return; var inv = gr.owner.matrixWorld.clone().invert();
+      buildMerged(gr.list, function (o) { return inv.clone().multiply(o.matrixWorld).elements; }, gr.owner, "VMerged_" + (n++), stats);
+    });
+    root.userData.gfxMerged = true; stats.vehicles++; stats.ms += Math.round(performance.now() - t0); return stats;
+  }
+  function mergeVehicles(g) { vehicleRoots(g).forEach(function (r) { mergeVehicle(g, r); }); if (G.vehicles) G.log.push("merged " + G.vehicles.meshesMerged + " vehicle parts into " + G.vehicles.groups + " across " + G.vehicles.vehicles + " vehicles (" + G.vehicles.ms + " ms)"); }
+  // after merging: release the GPU buffers of original geometries that no visible mesh uses any more (the JS objects stay,
+  // so nothing that still references them breaks; a geometry three.js needs again is simply re-uploaded)
+  function releaseHiddenGeometries(g) {
+    var used = new Set(), freed = 0, kept = 0; g.scene.traverse(function (o) { if (o.isMesh && o.visible && o.geometry) used.add(o.geometry); });
+    var seen = new Set(); g.scene.traverse(function (o) { if (o.isMesh && o.userData.mergedInto && o.geometry && !used.has(o.geometry) && !seen.has(o.geometry)) { seen.add(o.geometry); try { o.geometry.dispose(); freed++; } catch (e) { kept++; } } });
+    G.released = { geometriesFreed: freed, failed: kept }; G.log.push("released " + freed + " unused original geometries from the GPU");
+  }
+  function dedupeTextures(g) {
+    var stats = G.textures = { enabled: MERGE, materials: 0, textureRefs: 0, uniqueSources: 0, duplicatesReplaced: 0, disposed: 0, bytesFreedEstimate: 0 };
+    if (!MERGE) return stats;
+    var mats = new Set(); g.scene.traverse(function (o) { if (o.material) [].concat(o.material).forEach(function (m) { mats.add(m); }); }); stats.materials = mats.size;
+    var slots = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap", "bumpMap"], canon = new Map(), replaced = new Set(), sources = new Set();
+    mats.forEach(function (m) { slots.forEach(function (k) {
+      var t = m[k]; if (!t || !t.image) return; stats.textureRefs++; var img = t.image, src = img.src || img.currentSrc; if (!src) { sources.add(t.source); return; }
+      var key = [src, t.colorSpace, t.flipY, t.generateMipmaps, t.premultiplyAlpha, t.wrapS, t.wrapT, t.minFilter, t.magFilter, t.anisotropy, t.format, t.type, t.repeat.x, t.repeat.y, t.offset.x, t.offset.y, t.rotation].join("|");
+      var c = canon.get(key); if (!c) { canon.set(key, t); sources.add(t.source); return; }
+      if (c === t || c.source === t.source) return;
+      m[k] = c; replaced.add(t); stats.duplicatesReplaced++;
+    }); });
+    stats.uniqueSources = sources.size;
+    replaced.forEach(function (t) { var stillUsed = false; mats.forEach(function (m) { slots.forEach(function (k) { if (m[k] === t) stillUsed = true; }); }); if (!stillUsed) { try { var im = t.image; stats.bytesFreedEstimate += (im.width || 0) * (im.height || 0) * 4 * (t.generateMipmaps ? 1.33 : 1); t.dispose(); stats.disposed++; } catch (e) { } } });
+    G.log.push("textures: " + stats.duplicatesReplaced + " duplicate refs → " + stats.disposed + " GPU textures freed (~" + (stats.bytesFreedEstimate / 1048576).toFixed(0) + " MB)"); return stats;
+  }
   // --- public API + attach when the world exists
   G.set = function (name) { G.auto = false; return applyTier(name, "api"); };
   G.setAuto = function () { G.auto = true; applyTier(start, "auto"); };
   G.start = start; window.__gfx = G;
   function attach() {
     var g = window.__dg; if (!g || !g.ready || !g.renderer || !g.world) return false;
-    remember(g); wrapRender(g); installUI(g); applyTier(cur, "init"); attachedAt = performance.now(); if (G.debug) drawStats(); return true;
+    remember(g); try { mergeStatic(g); mergeVehicles(g); dedupeTextures(g); releaseHiddenGeometries(g); } catch (e) { G.log.push("optimise failed: " + e.message); }
+    if (!g.__gfxStartWrapped) { g.__gfxStartWrapped = true; var origStart = g.start.bind(g); g.start = function () { var r = origStart.apply(this, arguments); try { if (g.player && g.player.vehicle) mergeVehicle(g, g.player.vehicle.root); } catch (e) { G.log.push("vehicle merge failed: " + e.message); } return r; }; }
+    wrapRender(g); installUI(g); applyTier(cur, "init"); attachedAt = performance.now(); if (G.debug) drawStats(); return true;
   }
-  try { document.addEventListener("visibilitychange", function () { last = 0; slowSince = 0; fastSince = 0; }); } catch (e) { }
+  try { document.addEventListener("visibilitychange", function () { visChanged = performance.now(); last = 0; slowSince = 0; fastSince = 0; }); } catch (e) { }
   var tries = 0, timer = setInterval(function () { if (attach() || ++tries > 3000) clearInterval(timer); }, 200);
 })();

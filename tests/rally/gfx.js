@@ -57,6 +57,23 @@ async function world(p) { await p.waitForFunction(() => window.__ready === true,
     await p.waitForSelector("#nowebgl", { timeout: 20000 }); const t = await p.textContent("#nowebgl"); assert(/WebGL/.test(t) && /2D version/.test(t), "message text"); assert(await p.evaluate(() => window.__gfx && window.__gfx.webgl === false), "layer reports no WebGL"); await p.screenshot({ path: P.shot("gfx_nowebgl.png") });
   }, ["--disable-webgl", "--disable-webgl2", "--disable-3d-apis", "--disable-gpu"]);
 
+  await scenario("G06 merge: static meshes per cell and vehicle parts per owner, originals hidden, dynamic objects untouched, wheels keep their owners, draw calls fall", "&gfx=high", async (p, errors) => {
+    await world(p); const m = await p.evaluate(() => JSON.parse(JSON.stringify({ merge: window.__gfx.merge, vehicles: window.__gfx.vehicles, textures: window.__gfx.textures })));
+    assert(m.merge.enabled && m.merge.groups > 20 && m.merge.meshesMerged > 200, "static merged: " + JSON.stringify(m.merge)); assert(m.vehicles && m.vehicles.vehicles === 9 && m.vehicles.meshesMerged > 800, "vehicle parts merged: " + JSON.stringify(m.vehicles));
+    const totalMerged = m.merge.meshesMerged + m.vehicles.meshesMerged, totalGroups = m.merge.groups + m.vehicles.groups;
+    const chk = await p.evaluate(() => { const g = window.__dg; let hiddenOriginals = 0, merged = 0, dynamicMerged = 0, playerMerged = 0; g.scene.traverse(o => { if (o.userData.mergedInto) { hiddenOriginals += o.visible ? 0 : 1; } if (o.userData.mergedFrom) merged++; });
+      const isDyn = o => o.userData && (o.userData.animate || o.userData.setOpen || o.userData.wave || o.userData.clips); g.scene.traverse(o => { if (isDyn(o)) o.traverse(c => { if (c.userData.mergedInto) dynamicMerged++; }); }); g.player.vehicle.root.traverse(c => { if (c.userData.mergedInto) playerMerged++; }); g.traffic.forEach(t => t.v.root.traverse(c => { if (c.userData.mergedInto) playerMerged++; }));
+      g.renderer.info.reset(); g.render(); return { hiddenOriginals, merged, dynamicMerged, playerMerged, calls: g.renderer.info.render.calls, gpuTextures: g.renderer.info.memory.textures }; });
+    assert(chk.merged === totalGroups && chk.hiddenOriginals === totalMerged, "originals hidden, merged meshes present: " + JSON.stringify(chk) + " vs " + totalGroups + "/" + totalMerged); assert(chk.dynamicMerged === 0, "no animated/toggled mesh was merged");
+    const wheels = await p.evaluate(() => { const r = window.__dg.player.vehicle.root; let spinOwned = 0, rootOwned = 0; r.traverse(o => { if (o.userData.mergedFrom) { if (o.parent.name === "Spin" || o.parent.name === "Steer" || o.parent.name.indexOf("Wheel") === 0) spinOwned++; else if (o.parent === r || o.parent.name === "Body" || o.parent.name === "Details") rootOwned++; } }); return { spinOwned, rootOwned }; });
+    assert(wheels.spinOwned >= 4 && wheels.rootOwned >= 1, "vehicle parts merged under wheel owners and the body: " + JSON.stringify(wheels));
+    assert(m.textures.duplicatesReplaced >= 0 && errors.length === 0, "textures " + JSON.stringify(m.textures) + " errors " + errors.join("|"));
+    // still playable: the start arch opens the Al Baleed stop
+    const n = await p.evaluate(() => { const g = window.__dg; g.resetTo(30, undefined, true); g.progressS = 30; g.lastS = 30; let i = 0; while (i < 1200 && document.getElementById("qpanel").hidden) { g.keys.add("up"); g.update(1 / 60); i++; } g.keys.delete("up"); return i; }); assert(n > 0 && n < 1200, "arch stop opens (" + n + " steps)");
+    return `static ${m.merge.meshesMerged}→${m.merge.groups}, vehicles ${m.vehicles.meshesMerged}→${m.vehicles.groups}; ${chk.calls} calls; textures: ${m.textures.duplicatesReplaced} dup refs, ${m.textures.disposed} freed; gpu textures ${chk.gpuTextures}`;
+  });
+  await scenario("G06b #merge=0 leaves the scene as shipped", "&gfx=high&merge=0", async p => { await world(p); const m = await p.evaluate(() => window.__gfx.merge); assert(m && m.enabled === false && !m.groups, JSON.stringify(m)); const merged = await p.evaluate(() => { let n = 0; window.__dg.scene.traverse(o => { if (o.userData.mergedFrom) n++; }); return n; }); assert(merged === 0, "no merged meshes"); });
+
   hook.close(); srv.close(); fs.writeFileSync(P.tmp("rally_gfx.json"), JSON.stringify(results, null, 1));
   const fails = results.filter(r => r.verdict === "FAIL").length; console.log(`\n${fails ? "FAIL" : "PASS"}: ${results.length - fails}/${results.length}`); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error("RUNNER ERROR", e); process.exit(1); });

@@ -40,7 +40,8 @@ const texStats = { requests: 0, bytes: 0, files: [] };
   const rafFps = await p.evaluate(ms => new Promise(res => { let n = 0; const t0 = performance.now(); const tick = () => { n++; if (performance.now() - t0 < ms) requestAnimationFrame(tick); else res(+(n / ((performance.now() - t0) / 1000)).toFixed(2)); }; requestAnimationFrame(tick); }), 3000);
   const out = { label, file, when: new Date().toISOString(), headless: true, viewport: "1280x720@1", garageMs, worldBuildMs: buildMs, textures: { requests: texStats.requests, bytesKB: Math.round(texStats.bytes / 1024) }, rafFps, errors, ...prof };
   fs.mkdirSync(path.join(P.TMP, "perf"), { recursive: true }); const outFile = path.join(P.TMP, "perf", label + ".json"); fs.writeFileSync(outFile, JSON.stringify(out, null, 1));
-  await p.screenshot({ path: P.shot("perf_" + label + ".png") }); await b.close(); hook.close(); srv.close();
+  try { const png = await p.evaluate(() => { window.__dg.render(); return window.__dg.renderer.domElement.toDataURL("image/png"); }); fs.writeFileSync(P.shot("perf_" + label + ".png"), Buffer.from(png.split(",")[1], "base64")); } catch (e) { console.log("(canvas capture failed: " + e.message.split("\n")[0] + ")"); }
+  await b.close(); hook.close(); srv.close();
   const f = x => `${x.calls} calls / ${x.triangles} tris / render ${x.render.median} ms`;
   console.log(`== ${label} ==\n garage ${garageMs} ms, world build ${buildMs} ms, textures ${texStats.requests} req ${Math.round(texStats.bytes / 1024)} KB, rAF ${rafFps} fps, heap ${out.heap ? out.heap.usedMB + " MB" : "n/a"}`);
   console.log(` gfx ${out.base.gfx} pixelRatio ${out.base.pixelRatio} buffer ${out.base.drawingBuffer.join("x")} shadows ${out.base.shadowMap.enabled} type ${out.base.shadowMap.type} fog ${out.base.fog} far ${out.base.cameraFar}`);
