@@ -22,15 +22,17 @@ export class Fort {
     const sand = new THREE.Mesh(new THREE.CylinderGeometry(22, 26, 1.2, 18), m.sand); sand.position.y = 8.4; sand.receiveShadow = true; g.add(sand);
     // curtain wall facing the sea (the player looks from behind it, -z is the sea)
     const wall = new THREE.Mesh(boxUV(new THREE.BoxGeometry(34, 8, 3), 34, 8, 3, 1.6), m.stone); wall.position.set(0, 13, -14); wall.castShadow = !low; wall.receiveShadow = true; wall.name = "Wall"; g.add(wall);
-    for (let i = -8; i <= 8; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.3, 3.2), m.stone); c.position.set(i * 2, 17.65, -14); c.castShadow = !low; g.add(c); }
+    const merlons = new THREE.InstancedMesh(boxUV(new THREE.BoxGeometry(1.4, 1.3, 3.2), 1.4, 1.3, 3.2, 1.6), m.stone, 17 + 20); let mi = 0; const mm = new THREE.Matrix4();
+    for (let i = -8; i <= 8; i++) { mm.makeTranslation(i * 2, 17.65, -14); merlons.setMatrixAt(mi++, mm); }
     const walk = new THREE.Mesh(boxUV(new THREE.BoxGeometry(34, 0.6, 5), 34, 0.6, 5, 2.4), m.plaster); walk.position.set(0, 16.7, -11.5); walk.receiveShadow = true; g.add(walk);
     // side walls and towers
     for (const sx of [-1, 1]) {
       const side = new THREE.Mesh(boxUV(new THREE.BoxGeometry(3, 7, 22), 3, 7, 22, 1.6), m.stone); side.position.set(sx * 17, 12.5, -3); side.castShadow = !low; side.receiveShadow = true; g.add(side);
       const tower = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.8, 14, 16), m.plaster); tower.position.set(sx * 17.5, 16, -14); tower.castShadow = !low; tower.receiveShadow = true; tower.name = "Tower"; g.add(tower);
-      for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; const c = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 1.1), m.plaster); c.position.set(sx * 17.5 + Math.cos(a) * 4.2, 23.5, -14 + Math.sin(a) * 4.2); c.rotation.y = -a; g.add(c); }
+      for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; mm.makeRotationY(-a).setPosition(sx * 17.5 + Math.cos(a) * 4.2, 23.5, -14 + Math.sin(a) * 4.2); mm.scale(new THREE.Vector3(0.8, 0.85, 0.35)); merlons.setMatrixAt(mi++, mm); }
       const ring = new THREE.Mesh(new THREE.CylinderGeometry(4.6, 4.6, 0.6, 16), m.darkWood); ring.position.set(sx * 17.5, 22.7, -14); g.add(ring);
     }
+    merlons.castShadow = !low; merlons.receiveShadow = true; merlons.name = "Merlons"; g.add(merlons);
     // gate in the wall with an arch of darker stone
     const gate = new THREE.Mesh(new THREE.BoxGeometry(4.2, 5, 3.4), m.darkWood); gate.position.set(0, 11.5, -14); g.add(gate);
     const arch = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.5, 8, 16, Math.PI), m.plaster); arch.position.set(0, 14, -12.3); g.add(arch);

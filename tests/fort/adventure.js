@@ -64,6 +64,11 @@ async function desktop(browser) {
   // the game rules still run underneath: raiders sail, the view draws them
   d = await dbg(p); ok("A18", "fort.js raiders are drawn as dhows in the bay while exploring", d.ships === 5 && d.sailing >= 4, `ships=${d.ships}`);
   await p.screenshot({ path: P.shot("adv_after_rampart.png") });
+  // ---- graphics presets ----
+  const q0 = await dbg(p); await p.evaluate(() => window.__fortView.setQuality("low")); await p.waitForTimeout(300); const ql = await p.evaluate(() => { const v = window.__fortView; return { q: v.quality, auto: v.auto, shadows: v.fs.renderer.shadowMap.enabled, props: v.world.props.visible, pr: v.fs.renderer.getPixelRatio(), calls: v.debug().calls, btn: document.querySelector("#fgfx").textContent }; });
+  await p.evaluate(() => window.__fortView.setQuality("high")); await p.waitForTimeout(300); const qh = await p.evaluate(() => { const v = window.__fortView; return { q: v.quality, shadows: v.fs.renderer.shadowMap.enabled, props: v.world.props.visible, map: v.fs.sun.shadow.mapSize.x, calls: v.debug().calls }; });
+  ok("A26", "graphics presets: Low = no shadows, props hidden, pixel ratio 1; High = 2048 shadow map, props shown; fewer draw calls on Low", ql.q === "low" && !ql.shadows && !ql.props && ql.pr === 1 && qh.q === "high" && qh.shadows && qh.props && qh.map === 2048 && ql.calls < qh.calls && /Low/.test(ql.btn), `start=${q0.quality}/${q0.auto ? "auto" : "fixed"} low=${ql.calls} calls high=${qh.calls} calls`);
+  await p.keyboard.press("g"); await p.waitForTimeout(100); const qg = await p.evaluate(() => window.__fortView.quality); ok("A27", "the G key cycles the preset (High → Low)", qg === "low", `now=${qg}`);
   ok("A19", "no page errors (desktop)", errs.length === 0, errs.join(" | ").slice(0, 300)); await ctx.close();
 }
 async function mobile(browser) {

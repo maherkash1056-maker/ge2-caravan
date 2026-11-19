@@ -109,3 +109,20 @@ Rules in adventure mode (everything else is unchanged `fort.js`):
 Tests: `node tests/fort/adventure.js` — 24 checks (mount, gravity, walk/run/strafe, wall + keep collisions, doorway,
 staircase climb, rampart parapets, jump, real key events, mouse look + pitch clamp, station prompts, lane-locked cannons,
 firing, reading room, 📖 toggle, Pixel 7 landscape joystick + look drag, no-WebGL fallback to the classic page).
+
+### Graphics presets (adventure)
+
+`AdventureView.setQuality("low"|"medium"|"high")`, the ⚙ button (bottom right), the **G** key, or `#gfx=low|medium|high`
+in the page hash. Start preset: High on ≥ 5 cores and > 4 GB, Medium on touch devices / 3–4 cores / ≤ 4 GB, Low on
+≤ 2 cores or ≤ 2 GB. Automatic fallback: if the frame-time EMA stays above 30 ms for 3 s the preset steps down (once per
+5 s, never up); choosing a preset by hand switches the automatic mode off.
+
+| Preset | pixel ratio cap | shadow map | props | camera far |
+|---|---|---|---|---|
+| High | 2.0 | 2048 | shown | 900 m |
+| Medium | 1.25 | 1024 | shown | 600 m |
+| Low | 1.0 | off | hidden | 420 m |
+
+Antialiasing is fixed at creation (on for Medium/High, off for Low) because a WebGL context cannot change it later.
+Static world geometry is merged per material (one mesh for all stone, one for plaster, …), the merlons are an
+InstancedMesh, the Dhofar mountains are one merged mesh: ~150 draw calls on High at spawn, ~34 k triangles.

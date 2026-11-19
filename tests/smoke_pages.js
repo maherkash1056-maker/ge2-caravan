@@ -41,6 +41,7 @@ const PAGES = [
   { slot: 6, name: "snake_play",   url: "/caravan/games/snake_play.html#play&s=" + S,     vp: [400, 820] },
   { slot: 7, name: "snake_host",   url: "/caravan/games/snake_host.html#teacher&s=" + T,  vp: [1280, 800] },
   { slot: 8, name: "fort",         url: "/caravan/quests/fort.html#play&s=" + S,          vp: [400, 820], expect: "#app" },
+  { slot: "8-3d", name: "fort_adventure", url: "/caravan/quests/fort_adventure.html#play&s=" + S, vp: [1280, 720], expect: "#app" },
   { slot: 9, name: "rally",        url: "/caravan/quests/rally.html#play&s=" + S,         vp: [860, 400], expect: "#app" },
   { slot: 10, name: "dhow",        url: "/caravan/quests/dhow.html#play&s=" + S,          vp: [400, 820], expect: "#app" },
   { slot: 11, name: "brew_haha",   url: null, note: "no page source in the repo: slot 11 is built elsewhere (publish.sh reads Slot-11-Brew-Haha.html from CARAVAN_OUT)" },

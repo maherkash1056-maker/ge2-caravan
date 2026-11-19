@@ -21,7 +21,7 @@ export class FortScene {
     this.camera = new THREE.PerspectiveCamera(fov, 1, near, 900);
     // late-afternoon khareef light: warm sun low over the sea, cool mist in the distance
     this.scene.background = new THREE.Color(0xd9c3a0);
-    this.scene.fog = new THREE.Fog(0xdcc6a4, 140, 520);
+    this.scene.fog = new THREE.Fog(0xdcc6a4, 160, 560);
     const hemi = new THREE.HemisphereLight(0xdfeaf2, 0x6d6a55, 0.75); this.scene.add(hemi);
     this.sun = new THREE.DirectionalLight(0xfff0d0, 2.6); this.sun.position.set(-60, 70, -40);
     this.sun.castShadow = !low; this.sun.shadow.mapSize.set(low ? 512 : 1024, low ? 512 : 1024);
@@ -34,7 +34,7 @@ export class FortScene {
     const geo = new THREE.SphereGeometry(800, 24, 12);
     const mat = new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { top: { value: new THREE.Color(0x3a5f93) }, mid: { value: new THREE.Color(0xd9a57c) }, horizon: { value: new THREE.Color(0xf3cf8e) }, sunDir: { value: new THREE.Vector3(-0.6, 0.3, -0.75).normalize() } },
+      uniforms: { top: { value: new THREE.Color(0x4a7ab0) }, mid: { value: new THREE.Color(0xd8b48c) }, horizon: { value: new THREE.Color(0xf0d6a4) }, sunDir: { value: new THREE.Vector3(-0.6, 0.3, -0.75).normalize() } },
       vertexShader: "varying vec3 vW; void main(){ vW = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
       fragmentShader: "uniform vec3 top, mid, horizon, sunDir; varying vec3 vW; void main(){ float h = clamp(vW.y, 0.0, 1.0); vec3 c = h < 0.18 ? mix(horizon, mid, h / 0.18) : mix(mid, top, pow((h - 0.18) / 0.82, 0.6)); float s = pow(max(dot(vW, sunDir), 0.0), 40.0); c += vec3(1.0, 0.8, 0.5) * s * 1.1; float cl = sin(vW.x * 9.0 + vW.y * 23.0) * sin(vW.z * 7.0 - vW.y * 15.0); c = mix(c, vec3(0.95, 0.82, 0.74), smoothstep(0.55, 0.9, cl) * smoothstep(0.05, 0.25, h) * 0.5); gl_FragColor = vec4(c, 1.0); }",
     });
